@@ -164,7 +164,46 @@ The HTTP mode is stateless: each request is independent and the Google access to
 |---|---|---|
 | Your Mac + Tailscale Funnel or Cloudflare Tunnel | Free | Data never touches a third-party host. Only works while the Mac is awake. |
 | Fly.io, Railway, Render | About $0 to $5 a month | Runs the server unchanged as a long-lived process. Render's free tier sleeps when idle. |
-| Vercel | Free (Hobby) | Needs a small serverless adapter (not in this repo yet). |
+| Vercel | Free (Hobby) | Ready to go: `api/mcp.js` and `vercel.json` are in this repo. Steps below. |
+
+### Deploy on Vercel (free)
+
+1. Do steps 1 and 2 above on your computer and publish the OAuth app.
+2. Link the repo to a project on your personal (Hobby) scope and add the secrets as sensitive variables. Each `env add` prompts for the value:
+
+   ```bash
+   npx vercel@latest link --project google-health-mcp
+   ```
+
+   ```bash
+   openssl rand -hex 32 > ~/.config/google-health-mcp/mcp_http_token && chmod 600 ~/.config/google-health-mcp/mcp_http_token
+   ```
+
+   ```bash
+   npx vercel@latest env add MCP_HTTP_TOKEN production --sensitive < ~/.config/google-health-mcp/mcp_http_token
+   ```
+
+   ```bash
+   jq -r .refresh_token ~/.config/google-health-mcp/token.json | tr -d '\n' | npx vercel@latest env add GOOGLE_REFRESH_TOKEN production --sensitive
+   ```
+
+   ```bash
+   npx vercel@latest env add GOOGLE_CLIENT_ID production --sensitive
+   ```
+
+   ```bash
+   npx vercel@latest env add GOOGLE_CLIENT_SECRET production --sensitive
+   ```
+
+3. Deploy:
+
+   ```bash
+   npx vercel@latest deploy --prod
+   ```
+
+4. Your server URL is `https://YOUR-PROJECT.vercel.app/mcp`. Check `https://YOUR-PROJECT.vercel.app/healthz` returns `ok`.
+
+When the project is linked to GitHub, every push to `main` redeploys production. After changing an environment variable, redeploy for it to take effect. Vercel's request logs record full URLs, so the `?key=` form leaves the secret in your (private) logs. Use the header form where the client allows it.
 
 ## Security notes
 

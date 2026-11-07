@@ -1,9 +1,9 @@
 node_modules/
 dist/
-.env
-.env.*
+.env*
 credentials.json
 client_secret*.json
 token.json
 *.tmp
 .DS_Store
+.vercel/

@@ -125,7 +125,7 @@ export class TokenManager {
     const envRefreshToken = process.env.GOOGLE_REFRESH_TOKEN;
     const stored = envRefreshToken ? { refresh_token: envRefreshToken } : readToken();
     if (!stored?.refresh_token) {
-      throw new AuthError("Not signed in to Google Health yet. Run `google-health-mcp auth` in a terminal first.");
+      throw new AuthError("Not signed in to Google Health yet. Run `google-health-mcp auth` on your computer, or on a hosted deploy set GOOGLE_REFRESH_TOKEN, GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.");
     }
     if (!forceRefresh && stored.access_token && stored.expiry_date && stored.expiry_date - Date.now() > 60_000) {
       this.cached = { token: stored.access_token, expiresAt: stored.expiry_date };
