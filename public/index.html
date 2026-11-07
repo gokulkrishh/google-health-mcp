@@ -27,7 +27,7 @@
 
   nav { position: sticky; top: 0; z-index: 10; background: rgba(0,0,0,.8); backdrop-filter: saturate(180%) blur(12px); border-bottom: 1px solid var(--border); }
   nav .wrap { height: 60px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-  .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; letter-spacing: -.01em; text-decoration: none; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; letter-spacing: -.01em; text-decoration: none; white-space: nowrap; }
   .brand svg { flex: none; }
   .nav-actions { display: flex; gap: 8px; }
 
@@ -126,14 +126,15 @@
   footer a:hover { color: var(--fg); }
 
   @media (max-width: 900px) {
-    .hero, .panel { grid-template-columns: 1fr; }
+    .hero, .panel { grid-template-columns: minmax(0, 1fr); }
     .hero { padding-top: 64px; padding-bottom: 72px; gap: 48px; }
     .features, .steps, .faq { grid-template-columns: 1fr; }
     section { padding: 64px 0; }
   }
   @media (max-width: 560px) {
     .wrap { padding: 0 16px; }
-    .nav-actions .btn:not(.btn-primary) { display: none; }
+    .nav-actions .btn:not(.btn-primary), .hide-sm { display: none; }
+    .cmd { flex: 1 1 100%; }
     .tools-row { grid-template-columns: 1fr; }
     .tools-row > * { padding: 10px 16px; }
     .tools-row span { padding-top: 0; }
@@ -150,7 +151,7 @@
     </a>
     <div class="nav-actions">
       <a class="btn" href="https://github.com/gokulkrishh/google-health-mcp" rel="noopener">GitHub</a>
-      <a class="btn btn-primary" href="/auth">Sign in with Google</a>
+      <a class="btn btn-primary" href="/auth">Sign in<span class="hide-sm">&nbsp;with Google</span></a>
     </div>
   </div>
 </nav>
