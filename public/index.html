@@ -4,129 +4,402 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
+<meta name="color-scheme" content="dark">
 <title>Google Health MCP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #ffffff; --fg: #1d1d1f; --muted: #5f6368; --line: #e3e3e6;
-    --card: #f7f7f8; --code: #eef0f2; --accent: #1a73e8; --warn-bg: #fff6e0; --warn-fg: #6b4e00;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #121214; --fg: #e8e8ea; --muted: #a0a3a8; --line: #2c2c31;
-      --card: #1b1b1f; --code: #26262b; --accent: #8ab4f8; --warn-bg: #2e2612; --warn-fg: #f3d58a;
-    }
+    --bg: #000; --surface: #0a0a0a; --surface-2: #111113; --hover: #1a1a1a;
+    --border: #1f1f1f; --border-strong: #2e2e2e;
+    --fg: #ededed; --muted: #a1a1a1; --subtle: #6e6e6e;
+    --blue: #3b82f6; --blue-bg: rgba(59, 130, 246, .14); --green: #22c55e; --amber: #f5a524; --pink: #ec4899;
+    --sans: "Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
   }
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
-  main { max-width: 44rem; margin: 0 auto; padding: 3rem 16px 4rem; }
-  h1 { font-size: 1.9rem; margin: 0 0 .25rem; letter-spacing: -.01em; }
-  h2 { font-size: 1.15rem; margin: 2.25rem 0 .6rem; }
-  h3 { font-size: 1rem; margin: 1.25rem 0 .35rem; }
-  p, li { color: var(--fg); }
-  .lede { color: var(--muted); margin: 0 0 1.25rem; }
-  .note { background: var(--warn-bg); color: var(--warn-fg); border-radius: 8px; padding: .6rem .85rem; font-size: .92rem; }
-  a { color: var(--accent); }
-  code { background: var(--code); padding: .1em .35em; border-radius: 4px; font-size: .9em; word-break: break-all; }
-  .url { display: flex; gap: .5rem; align-items: stretch; margin: .5rem 0; }
-  .url code { flex: 1; display: flex; align-items: center; padding: .55rem .7rem; font-size: .95rem; }
-  button { font: inherit; font-size: .9rem; border: 1px solid var(--line); background: var(--card); color: var(--fg); border-radius: 6px; padding: .45rem .8rem; cursor: pointer; }
-  button:hover { border-color: var(--accent); }
-  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: .25rem 1rem .75rem; margin: .75rem 0; }
-  ol { padding-left: 1.3rem; }
-  li { margin: .25rem 0; }
-  pre { background: var(--code); border-radius: 6px; padding: .7rem .8rem; overflow-x: auto; font-size: .85rem; margin: .5rem 0; }
-  pre code { background: none; padding: 0; word-break: normal; }
-  .cta { display: inline-block; background: var(--accent); color: var(--bg); text-decoration: none; padding: .55rem 1rem; border-radius: 6px; font-weight: 600; }
-  footer { margin-top: 3rem; color: var(--muted); font-size: .88rem; }
+  html { background: var(--bg); }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.6 var(--sans); -webkit-font-smoothing: antialiased; }
+  a { color: inherit; }
+  code, pre, .mono { font-family: var(--mono); }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+
+  nav { position: sticky; top: 0; z-index: 10; background: rgba(0,0,0,.8); backdrop-filter: saturate(180%) blur(12px); border-bottom: 1px solid var(--border); }
+  nav .wrap { height: 60px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; letter-spacing: -.01em; text-decoration: none; }
+  .brand svg { flex: none; }
+  .nav-actions { display: flex; gap: 8px; }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 36px; padding: 0 14px; border-radius: 8px; font: 500 14px/1 var(--sans); text-decoration: none; border: 1px solid var(--border-strong); background: var(--surface); color: var(--fg); cursor: pointer; white-space: nowrap; transition: background .15s, border-color .15s; }
+  .btn:hover { background: var(--hover); }
+  .btn-primary { background: var(--fg); color: #000; border-color: var(--fg); }
+  .btn-primary:hover { background: #fff; }
+  .btn-lg { height: 44px; padding: 0 20px; border-radius: 999px; font-size: 15px; }
+
+  .hero { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: center; padding: 96px 0 104px; }
+  .eyebrow { display: inline-flex; align-items: center; gap: 8px; font: 500 13px/1 var(--mono); color: var(--muted); margin-bottom: 20px; }
+  .eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 3px rgba(34,197,94,.18); }
+  h1 { font-weight: 500; font-size: clamp(2.6rem, 5.6vw, 4rem); line-height: 1.04; letter-spacing: -.045em; margin: 0 0 24px; }
+  .lede { color: var(--muted); font-size: 19px; line-height: 1.65; margin: 0 0 32px; max-width: 30rem; }
+  .cmd-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+  .cmd { display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 8px 0 16px; border: 1px solid var(--border-strong); background: var(--surface); border-radius: 999px; font: 14px/1 var(--mono); color: var(--fg); min-width: 0; max-width: 100%; }
+  .cmd .prompt { color: var(--subtle); }
+  .cmd code { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .icon-btn { flex: none; display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 999px; border: 0; background: transparent; color: var(--muted); cursor: pointer; }
+  .icon-btn:hover { background: var(--hover); color: var(--fg); }
+  .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 18px; color: var(--subtle); font: 13px/1 var(--mono); }
+  .chip { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border: 1px solid var(--border-strong); border-radius: 6px; color: var(--muted); font: 500 12px/1 var(--sans); }
+
+  .window { border: 1px solid var(--border-strong); background: var(--surface); border-radius: 12px; overflow: hidden; box-shadow: 0 30px 80px rgba(0,0,0,.6); }
+  .titlebar { position: relative; height: 38px; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid var(--border); color: var(--muted); font-size: 13px; }
+  .lights { position: absolute; left: 14px; display: flex; gap: 7px; }
+  .lights i { width: 11px; height: 11px; border-radius: 50%; display: block; }
+  .chat { padding: 20px; display: grid; gap: 18px; }
+  .msg { display: grid; grid-template-columns: 28px 1fr; gap: 12px; }
+  .avatar { width: 28px; height: 28px; border-radius: 7px; display: grid; place-items: center; font: 600 12px/1 var(--sans); }
+  .who { font-size: 14px; font-weight: 600; display: flex; gap: 8px; align-items: center; }
+  .who small { font-weight: 400; color: var(--subtle); font-size: 12px; }
+  .tag { font: 500 11px/1 var(--sans); color: var(--muted); border: 1px solid var(--border-strong); border-radius: 4px; padding: 3px 5px; }
+  .msg p { margin: 4px 0 0; font-size: 14px; color: #d4d4d4; }
+  .calls { margin-top: 8px; display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; font-size: 13px; }
+  .calls code { color: var(--fg); }
+  .calls span { color: var(--subtle); }
+  .stats { margin-top: 12px; border: 1px solid var(--border); border-radius: 8px; display: grid; grid-template-columns: repeat(3, 1fr); }
+  .stats div { padding: 10px 12px; border-right: 1px solid var(--border); }
+  .stats div:last-child { border-right: 0; }
+  .stats b { display: block; font: 500 17px/1.2 var(--sans); letter-spacing: -.02em; }
+  .stats span { font-size: 12px; color: var(--subtle); }
+  .bar { height: 6px; border-radius: 3px; background: var(--border); margin-top: 8px; overflow: hidden; display: flex; }
+  .bar i { display: block; height: 100%; }
+  .example { text-align: right; color: var(--subtle); font-size: 12px; margin-top: 10px; }
+
+  section { border-top: 1px solid var(--border); padding: 88px 0; }
+  h2 { font-weight: 500; font-size: clamp(1.9rem, 3.6vw, 2.75rem); line-height: 1.1; letter-spacing: -.035em; margin: 0 0 16px; }
+  .section-lede { color: var(--muted); font-size: 18px; margin: 0 0 48px; max-width: 36rem; }
+  .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; }
+  .features h3 { font-size: 16px; font-weight: 500; margin: 0 0 8px; }
+  .features p { color: var(--muted); margin: 0; font-size: 16px; }
+  .feature-icon { width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border-strong); background: var(--surface); display: grid; place-items: center; margin-bottom: 16px; color: var(--muted); }
+
+  .steps { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  .step { border: 1px solid var(--border); background: var(--surface); border-radius: 12px; padding: 24px; }
+  .step-n { font: 500 13px/1 var(--mono); color: var(--subtle); margin-bottom: 14px; display: block; }
+  .step h3 { margin: 0 0 8px; font-size: 18px; font-weight: 500; letter-spacing: -.01em; }
+  .step p { color: var(--muted); margin: 0 0 20px; }
+  .url-box { display: flex; align-items: center; gap: 8px; border: 1px solid var(--border-strong); background: var(--bg); border-radius: 8px; padding: 6px 6px 6px 12px; font: 13px/1.4 var(--mono); }
+  .url-box code { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+
+  .tabs { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 20px; }
+  .tab { height: 34px; padding: 0 12px; border-radius: 8px; border: 1px solid transparent; background: transparent; color: var(--muted); font: 500 14px/1 var(--sans); cursor: pointer; }
+  .tab:hover { color: var(--fg); }
+  .tab[aria-selected="true"] { background: var(--surface-2); border-color: var(--border-strong); color: var(--fg); }
+  .panel { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: start; }
+  .panel[hidden] { display: none; }
+  .panel ol { margin: 0; padding: 0; list-style: none; counter-reset: s; display: grid; gap: 18px; }
+  .panel li { counter-increment: s; display: grid; grid-template-columns: 26px 1fr; gap: 12px; color: var(--muted); }
+  .panel li::before { content: counter(s); width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--border-strong); display: grid; place-items: center; font: 500 12px/1 var(--mono); color: var(--fg); }
+  .panel li b { color: var(--fg); font-weight: 500; }
+  .panel li code, .tools code, .faq code { background: var(--surface-2); border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; font-size: 13px; color: var(--fg); }
+  .code-window pre { margin: 0; padding: 18px; font-size: 13px; line-height: 1.7; color: #d4d4d4; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .code-window .k { color: var(--subtle); }
+  .code-window .s { color: #8ab4f8; }
+  .code-window .t { color: var(--amber); }
+  .code-foot { display: flex; justify-content: flex-end; padding: 10px; border-top: 1px solid var(--border); }
+
+  .tools { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .tools-row { display: grid; grid-template-columns: 220px 1fr; border-top: 1px solid var(--border); }
+  .tools-row:first-child { border-top: 0; }
+  .tools-row > * { padding: 14px 18px; }
+  .tools-row code { justify-self: start; align-self: center; }
+  .tools-row span { color: var(--muted); }
+  .asks { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 32px; }
+  .asks span { border: 1px solid var(--border-strong); background: var(--surface); border-radius: 999px; padding: 8px 14px; font-size: 14px; color: #d4d4d4; }
+
+  .faq { display: grid; grid-template-columns: repeat(2, 1fr); gap: 32px 40px; }
+  .faq h3 { font-size: 16px; font-weight: 500; margin: 0 0 6px; }
+  .faq p { color: var(--muted); margin: 0; }
+
+  footer { border-top: 1px solid var(--border); padding: 32px 0 48px; color: var(--subtle); font-size: 14px; }
+  footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; }
+  footer a { color: var(--muted); text-decoration: none; }
+  footer a:hover { color: var(--fg); }
+
+  @media (max-width: 900px) {
+    .hero, .panel { grid-template-columns: 1fr; }
+    .hero { padding: 64px 0 72px; gap: 48px; }
+    .features, .steps, .faq { grid-template-columns: 1fr; }
+    section { padding: 64px 0; }
+  }
+  @media (max-width: 560px) {
+    .wrap { padding: 0 16px; }
+    .nav-actions .btn:not(.btn-primary) { display: none; }
+    .tools-row { grid-template-columns: 1fr; }
+    .tools-row > * { padding: 10px 16px; }
+    .tools-row span { padding-top: 0; }
+    .stats b { font-size: 15px; }
+  }
 </style>
 </head>
 <body>
+<nav>
+  <div class="wrap">
+    <a class="brand" href="/">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="1" y="1" width="22" height="22" rx="6" stroke="#ededed" stroke-width="1.5"/><path d="M5 12.5h3.2l2-4.5 3.3 8 2-3.5H19" stroke="#ededed" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Google Health MCP
+    </a>
+    <div class="nav-actions">
+      <a class="btn" href="https://github.com/gokulkrishh/google-health-mcp" rel="noopener">GitHub</a>
+      <a class="btn btn-primary" href="/auth">Sign in with Google</a>
+    </div>
+  </div>
+</nav>
+
 <main>
-  <h1>Google Health MCP</h1>
-  <p class="lede">A private, read-only MCP server that lets AI apps like Claude, ChatGPT and Grok answer questions about your Fitbit and Pixel Watch data, such as sleep, steps, heart rate and weight.</p>
-  <p class="note"><strong>Unofficial.</strong> A community project, not made or supported by Google or Fitbit. It can only read your data, never change it.</p>
+  <div class="wrap hero">
+    <div>
+      <div class="eyebrow"><span class="dot"></span>MCP server · read-only</div>
+      <h1>Your Fitbit data, in every AI chat</h1>
+      <p class="lede">Ask Claude, ChatGPT or Grok about your sleep, steps, heart rate and weight. A private MCP server for the Google Health API that runs on your own Vercel.</p>
+      <div class="cmd-row">
+        <div class="cmd" title="Your MCP server address">
+          <span class="prompt">$</span><code id="hero-url">/mcp</code>
+          <button class="icon-btn" type="button" data-copy="hero-url" aria-label="Copy server address">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+          </button>
+        </div>
+        <a class="btn btn-primary btn-lg" href="#connect">Connect an app</a>
+      </div>
+      <div class="meta">Google Health API v4 · MIT · <span class="chip">Unofficial</span></div>
+    </div>
 
-  <h2>What is MCP?</h2>
-  <p>The <a href="https://modelcontextprotocol.io" rel="noopener">Model Context Protocol</a> is a standard way for AI apps to use outside tools. Once you add this server to an app, you can ask things like "How did I sleep last night?" or "Show my steps for the last week" and it fetches the answer from your Google Health account.</p>
-
-  <h2>Your server address</h2>
-  <div class="url"><code id="mcp-url">/mcp</code><button type="button" data-copy="mcp-url">Copy</button></div>
-  <p>Every app also needs your <strong>access token</strong> (the <code>MCP_HTTP_TOKEN</code> you set in Vercel). Treat it like a password: anyone with it can read your health data. Never paste it into a chat.</p>
-
-  <h2>Step 1. Connect your Google account (once)</h2>
-  <p>This lets the server read your Fitbit data. You only redo it if Google ends the sign-in.</p>
-  <p><a class="cta" href="/auth">Sign in with Google</a></p>
-
-  <h2>Step 2. Add it to your AI app</h2>
-
-  <div class="card">
-    <h3>Claude (web, desktop and mobile)</h3>
-    <ol>
-      <li>Open claude.ai → <strong>Settings → Connectors → Add custom connector</strong>.</li>
-      <li>Name it <code>Google Health</code> and paste the server address above.</li>
-      <li>Authentication: <strong>No sign in</strong>.</li>
-      <li>Under <strong>Request headers</strong> add <code>Authorization</code> with the value <code>Bearer YOUR_TOKEN</code> (with a space after "Bearer").</li>
-      <li>In a chat, turn on <strong>Google Health</strong> from the tools menu.</li>
-    </ol>
-    <p>It then works in the Claude desktop and phone apps too.</p>
+    <figure style="margin:0">
+    <div class="window" aria-label="Example conversation">
+      <div class="titlebar"><span class="lights"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span>Claude · Google Health</div>
+      <div class="chat">
+        <div class="msg">
+          <div class="avatar" style="background:var(--pink);color:#fff">Y</div>
+          <div><div class="who">You <small>8:02 AM</small></div><p>How did I sleep, and how active was I yesterday?</p></div>
+        </div>
+        <div class="msg">
+          <div class="avatar" style="background:#2a2a2e"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 12.5h3.6l2.2-5 3.7 9 2.2-4H21" stroke="#ededed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <div>
+            <div class="who">Claude <span class="tag">MCP</span> <small>8:02 AM</small></div>
+            <div class="calls">
+              <code>get_daily_summary</code><span>Steps, calories, heart rate</span>
+              <code>get_data_points</code><span>Sleep stages for last night</span>
+            </div>
+            <p>You slept 7 h 12 min with 1 h 34 min of deep and REM sleep. Yesterday you walked 8,214 steps and your resting heart rate was 61 bpm.</p>
+            <div class="stats">
+              <div><b>7h 12m</b><span>Sleep</span><div class="bar"><i style="width:22%;background:var(--blue)"></i><i style="width:58%;background:#60a5fa"></i><i style="width:20%;background:#a78bfa"></i></div></div>
+              <div><b>8,214</b><span>Steps</span><div class="bar"><i style="width:82%;background:var(--green)"></i></div></div>
+              <div><b>61 bpm</b><span>Resting HR</span><div class="bar"><i style="width:45%;background:var(--amber)"></i></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <figcaption class="example">Example conversation with sample numbers.</figcaption>
+    </figure>
   </div>
 
-  <div class="card">
-    <h3>Claude Code</h3>
-    <p>Run in your terminal, replacing <code>YOUR_TOKEN</code>:</p>
-    <pre><code id="cc-cmd">claude mcp add --transport http -s user google-health /mcp --header "Authorization: Bearer YOUR_TOKEN"</code></pre>
-    <button type="button" data-copy="cc-cmd">Copy command</button>
-    <p>Then check it with <code>claude mcp list</code>.</p>
-  </div>
+  <section>
+    <div class="wrap">
+      <div class="features">
+        <div>
+          <div class="feature-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
+          <h3>Read-only by design</h3>
+          <p>It only asks Google for read access, so it can never change or delete your data. An access token keeps everyone else out.</p>
+        </div>
+        <div>
+          <div class="feature-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10"/></svg></div>
+          <h3>Works with any MCP app</h3>
+          <p>Claude on web, desktop and phone, Claude Code, ChatGPT, Grok, and anything that speaks the Model Context Protocol.</p>
+        </div>
+        <div>
+          <div class="feature-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3v18M3 12h18"/></svg></div>
+          <h3>35 kinds of health data</h3>
+          <p>Sleep stages, steps, heart rate, HRV, SpO2, weight, workouts and more from Fitbit and Pixel Watch.</p>
+        </div>
+      </div>
+    </div>
+  </section>
 
-  <div class="card">
-    <h3>ChatGPT</h3>
-    <ol>
-      <li><strong>Settings → Apps &amp; Connectors → Advanced</strong>, turn on <strong>Developer mode</strong> (paid plans).</li>
-      <li>Create a connector with authentication <strong>No authentication</strong> and this URL, replacing <code>YOUR_TOKEN</code>:</li>
-    </ol>
-    <pre><code id="key-url">/mcp?key=YOUR_TOKEN</code></pre>
-  </div>
+  <section id="connect">
+    <div class="wrap">
+      <h2>Set up in two steps</h2>
+      <p class="section-lede">Sign in with Google once, then add the server to the AI apps you use.</p>
+      <div class="steps">
+        <div class="step">
+          <span class="step-n">01</span>
+          <h3>Connect your Google account</h3>
+          <p>Lets this server read your Fitbit data. You only redo it if Google ends the sign-in.</p>
+          <a class="btn btn-primary" href="/auth">Sign in with Google</a>
+        </div>
+        <div class="step">
+          <span class="step-n">02</span>
+          <h3>Copy your server address</h3>
+          <p>Paste it into your AI app with your access token (<span class="mono">MCP_HTTP_TOKEN</span>). Treat the token like a password.</p>
+          <div class="url-box"><code id="step-url">/mcp</code><button class="btn" type="button" data-copy="step-url">Copy</button></div>
+        </div>
+      </div>
+    </div>
+  </section>
 
-  <div class="card">
-    <h3>Grok and other apps</h3>
-    <p>Grok: <strong>grok.com/connectors → New Connector → Custom</strong>. Any app that supports remote MCP servers ("Streamable HTTP") works: use the server address with an <code>Authorization: Bearer YOUR_TOKEN</code> header, or the <code>?key=</code> URL if the app has no header field.</p>
-  </div>
+  <section>
+    <div class="wrap">
+      <h2>Add it to your AI app</h2>
+      <p class="section-lede">Pick your app. Replace <span class="mono">YOUR_TOKEN</span> with your access token, and never paste the token into a chat.</p>
+      <div class="tabs" role="tablist" aria-label="AI apps">
+        <button class="tab" role="tab" aria-selected="true" aria-controls="p-claude" id="t-claude">Claude</button>
+        <button class="tab" role="tab" aria-selected="false" aria-controls="p-code" id="t-code">Claude Code</button>
+        <button class="tab" role="tab" aria-selected="false" aria-controls="p-chatgpt" id="t-chatgpt">ChatGPT</button>
+        <button class="tab" role="tab" aria-selected="false" aria-controls="p-other" id="t-other">Grok and others</button>
+      </div>
 
-  <h2>Try asking</h2>
-  <ul>
-    <li>"How did I do today?"</li>
-    <li>"How did I sleep last night?"</li>
-    <li>"Steps per day for the last 2 weeks, as a table."</li>
-    <li>"Is my resting heart rate going up or down this month?"</li>
-  </ul>
+      <div class="panel" role="tabpanel" id="p-claude" aria-labelledby="t-claude">
+        <ol>
+          <li><span>Open claude.ai, then <b>Settings → Connectors → Add custom connector</b>.</span></li>
+          <li><span>Name it <code>Google Health</code> and paste your server address.</span></li>
+          <li><span>Set authentication to <b>No sign in</b>.</span></li>
+          <li><span>Under <b>Request headers</b>, add <code>Authorization</code> with the value shown here.</span></li>
+          <li><span>Turn on <b>Google Health</b> from the tools menu in a chat. It also works in the desktop and phone apps.</span></li>
+        </ol>
+        <div class="window code-window">
+          <div class="titlebar"><span class="lights"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span>Custom connector</div>
+          <pre><span class="k">URL</span>
+<span class="s" data-fill>/mcp</span>
 
-  <h2>Troubleshooting</h2>
-  <ul>
-    <li><strong>"Not signed in"</strong>: use the Sign in with Google button above.</li>
-    <li><strong>"Unauthorized" or "credential rejected"</strong>: the token in your app is wrong or was changed. Update it.</li>
-    <li><strong>No data for today</strong>: open the Fitbit app so your tracker syncs. Sleep and resting heart rate appear after a night's wear.</li>
-    <li>Server status: <a href="/healthz">/healthz</a> should say <code>ok</code>.</li>
-  </ul>
+<span class="k">Authentication</span>
+No sign in
 
-  <footer>Source and full setup guide: <a href="https://github.com/gokulkrishh/google-health-mcp" rel="noopener">github.com/gokulkrishh/google-health-mcp</a></footer>
+<span class="k">Request header</span>
+Authorization: <span class="t">Bearer YOUR_TOKEN</span></pre>
+        </div>
+      </div>
+
+      <div class="panel" role="tabpanel" id="p-code" aria-labelledby="t-code" hidden>
+        <ol>
+          <li><span>Run the command in your terminal, with your token in place of <code>YOUR_TOKEN</code>.</span></li>
+          <li><span>Check it with <code>claude mcp list</code>. It should say <b>Connected</b>.</span></li>
+          <li><span>Start a new session and ask "How did I do today?"</span></li>
+        </ol>
+        <div class="window code-window">
+          <div class="titlebar"><span class="lights"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span>Terminal</div>
+          <pre id="cc-cmd"><span class="k">$</span> claude mcp add --transport http -s user google-health <span class="s" data-fill>/mcp</span> --header "Authorization: <span class="t">Bearer YOUR_TOKEN</span>"</pre>
+          <div class="code-foot"><button class="btn" type="button" data-copy="cc-cmd" data-strip="$ ">Copy command</button></div>
+        </div>
+      </div>
+
+      <div class="panel" role="tabpanel" id="p-chatgpt" aria-labelledby="t-chatgpt" hidden>
+        <ol>
+          <li><span>Open <b>Settings → Apps &amp; Connectors → Advanced</b> and turn on <b>Developer mode</b>. Needs a paid plan.</span></li>
+          <li><span>Create a connector with authentication <b>No authentication</b>.</span></li>
+          <li><span>Use the URL shown here. ChatGPT can't send headers, so the token goes in the URL.</span></li>
+        </ol>
+        <div class="window code-window">
+          <div class="titlebar"><span class="lights"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span>New connector</div>
+          <pre><span class="k">MCP server URL</span>
+<span class="s" data-fill>/mcp</span>?key=<span class="t">YOUR_TOKEN</span>
+
+<span class="k">Authentication</span>
+No authentication</pre>
+        </div>
+      </div>
+
+      <div class="panel" role="tabpanel" id="p-other" aria-labelledby="t-other" hidden>
+        <ol>
+          <li><span>Grok: <b>grok.com/connectors → New Connector → Custom</b>.</span></li>
+          <li><span>Any app that supports remote MCP over <b>Streamable HTTP</b> works the same way.</span></li>
+          <li><span>Prefer the header. Use the <code>?key=</code> URL only when the app has no header field.</span></li>
+        </ol>
+        <div class="window code-window">
+          <div class="titlebar"><span class="lights"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span>Remote MCP</div>
+          <pre><span class="k">URL</span>
+<span class="s" data-fill>/mcp</span>
+
+<span class="k">Header</span>
+Authorization: <span class="t">Bearer YOUR_TOKEN</span>
+
+<span class="k">Or, without headers</span>
+<span class="s" data-fill>/mcp</span>?key=<span class="t">YOUR_TOKEN</span></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <h2>What your AI can read</h2>
+      <p class="section-lede">Seven tools, all read-only.</p>
+      <div class="tools">
+        <div class="tools-row"><code>get_daily_summary</code><span>One day at a glance: steps, distance, calories, Active Zone Minutes, resting heart rate, HRV, sleep and workouts.</span></div>
+        <div class="tools-row"><code>get_daily_rollup</code><span>Trends per day or week, up to 90 days.</span></div>
+        <div class="tools-row"><code>get_rollup</code><span>Hour-by-hour values, such as heart rate during a run.</span></div>
+        <div class="tools-row"><code>get_data_points</code><span>Raw records: sleep stages, workouts, weight, SpO2, HRV.</span></div>
+        <div class="tools-row"><code>get_user_info</code><span>Profile, units, time zone and goals.</span></div>
+        <div class="tools-row"><code>list_paired_devices</code><span>Your devices, battery level and last sync.</span></div>
+        <div class="tools-row"><code>list_data_types</code><span>Every readable data type and what it supports.</span></div>
+      </div>
+      <div class="asks">
+        <span>"How did I sleep last night?"</span>
+        <span>"Steps per day for the last two weeks"</span>
+        <span>"Is my resting heart rate trending down?"</span>
+        <span>"Heart rate during this morning's run"</span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <h2>Troubleshooting</h2>
+      <p class="section-lede">The common fixes.</p>
+      <div class="faq">
+        <div><h3>"Not signed in"</h3><p>Use <a href="/auth">Sign in with Google</a>. You only need it again if Google ends the sign-in.</p></div>
+        <div><h3>"Unauthorized" or "credential rejected"</h3><p>The token in your app is wrong or was changed. Update it in the app's connector settings.</p></div>
+        <div><h3>No data for today</h3><p>Open the Fitbit app so your tracker syncs. Sleep and resting heart rate appear after a night's wear.</p></div>
+        <div><h3>Is it up?</h3><p><a href="/healthz">/healthz</a> returns <code>ok</code> when the server is running.</p></div>
+      </div>
+    </div>
+  </section>
 </main>
+
+<footer>
+  <div class="wrap">
+    <span>Unofficial community project. Not made or supported by Google or Fitbit.</span>
+    <span><a href="https://github.com/gokulkrishh/google-health-mcp" rel="noopener">GitHub</a> · MIT</span>
+  </div>
+</footer>
+
 <script>
-  const origin = location.origin;
-  for (const id of ["mcp-url", "cc-cmd", "key-url"]) {
-    const el = document.getElementById(id);
-    el.textContent = el.textContent.replace("/mcp", origin + "/mcp");
-  }
+  const CHECK_ICON = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.2" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+  const mcpUrl = location.origin + "/mcp";
+  for (const id of ["hero-url", "step-url"]) document.getElementById(id).textContent = mcpUrl;
+  for (const el of document.querySelectorAll("[data-fill]")) el.textContent = mcpUrl;
+
   for (const button of document.querySelectorAll("[data-copy]")) {
     button.addEventListener("click", async () => {
-      const text = document.getElementById(button.dataset.copy).textContent;
+      let text = document.getElementById(button.dataset.copy).textContent;
+      if (button.dataset.strip && text.startsWith(button.dataset.strip)) text = text.slice(button.dataset.strip.length);
+      const label = button.innerHTML;
+      const iconOnly = button.classList.contains("icon-btn");
       try {
         await navigator.clipboard.writeText(text);
-        const label = button.textContent;
-        button.textContent = "Copied";
-        setTimeout(() => (button.textContent = label), 1500);
+        button.innerHTML = iconOnly ? CHECK_ICON : "Copied";
       } catch {
-        button.textContent = "Select and copy manually";
+        button.textContent = iconOnly ? "!" : "Copy failed";
+      }
+      setTimeout(() => (button.innerHTML = label), 1500);
+    });
+  }
+
+  const tabs = [...document.querySelectorAll('[role="tab"]')];
+  for (const tab of tabs) {
+    tab.addEventListener("click", () => {
+      for (const t of tabs) {
+        const selected = t === tab;
+        t.setAttribute("aria-selected", String(selected));
+        document.getElementById(t.getAttribute("aria-controls")).hidden = !selected;
       }
     });
   }
