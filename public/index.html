@@ -91,17 +91,10 @@
   .url-box { display: flex; align-items: center; gap: 8px; border: 1px solid var(--border-strong); background: var(--bg); border-radius: 8px; padding: 6px 6px 6px 12px; font: 13px/1.4 var(--mono); }
   .url-box code { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 
-  .tabs { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 20px; }
-  .tab { height: 34px; padding: 0 12px; border-radius: 8px; border: 1px solid transparent; background: transparent; color: var(--muted); font: 500 14px/1 var(--sans); cursor: pointer; }
-  .tab:hover { color: var(--fg); }
-  .tab[aria-selected="true"] { background: var(--surface-2); border-color: var(--border-strong); color: var(--fg); }
   .panel { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: start; }
-  .panel[hidden] { display: none; }
-  .panel ol { margin: 0; padding: 0; list-style: none; counter-reset: s; display: grid; gap: 18px; }
-  .panel li { counter-increment: s; display: grid; grid-template-columns: 26px 1fr; gap: 12px; color: var(--muted); }
-  .panel li::before { content: counter(s); width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--border-strong); display: grid; place-items: center; font: 500 12px/1 var(--mono); color: var(--fg); }
-  .panel li b { color: var(--fg); font-weight: 500; }
-  .panel li code, .tools code, .faq code { background: var(--surface-2); border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; font-size: 13px; color: var(--fg); }
+  .prose p { margin: 0 0 16px; color: var(--muted); font-size: 17px; line-height: 1.7; }
+  .prose b { color: var(--fg); font-weight: 500; }
+  .prose code, .tools code, .faq code { background: var(--surface-2); border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; font-size: 13px; color: var(--fg); }
   .code-window pre { margin: 0; padding: 18px; font-size: 13px; line-height: 1.7; color: #d4d4d4; white-space: pre-wrap; overflow-wrap: anywhere; }
   .code-window .k { color: var(--subtle); }
   .code-window .s { color: #8ab4f8; }
@@ -251,81 +244,28 @@
 
   <section id="connect">
     <div class="wrap">
-      <h2>Add it to your AI app</h2>
-      <p class="section-lede">Pick your app. Replace <span class="mono">YOUR_TOKEN</span> with your access token, and never paste the token into a chat.</p>
-      <div class="tabs" role="tablist" aria-label="AI apps">
-        <button class="tab" role="tab" aria-selected="true" aria-controls="p-claude" id="t-claude">Claude</button>
-        <button class="tab" role="tab" aria-selected="false" aria-controls="p-code" id="t-code">Claude Code</button>
-        <button class="tab" role="tab" aria-selected="false" aria-controls="p-chatgpt" id="t-chatgpt">ChatGPT</button>
-        <button class="tab" role="tab" aria-selected="false" aria-controls="p-other" id="t-other">Grok and others</button>
-      </div>
-
-      <div class="panel" role="tabpanel" id="p-claude" aria-labelledby="t-claude">
-        <ol>
-          <li><span>Open claude.ai, then <b>Settings → Connectors → Add custom connector</b>.</span></li>
-          <li><span>Name it <code>Google Health</code> and paste your server address.</span></li>
-          <li><span>Set authentication to <b>No sign in</b>.</span></li>
-          <li><span>Under <b>Request headers</b>, add <code>Authorization</code> with the value shown here.</span></li>
-          <li><span>Turn on <b>Google Health</b> from the tools menu in a chat. It also works in the desktop and phone apps.</span></li>
-        </ol>
+      <h2>Add it to any AI app</h2>
+      <p class="section-lede">Every app that supports MCP needs the same two things: your server address and your access token. Only the menu changes.</p>
+      <div class="panel">
+        <div class="prose">
+          <p>Add a custom connector (some apps call it an MCP server) and paste your server address. If the app lets you add a request header, set <code>Authorization</code> to <code>Bearer YOUR_TOKEN</code> and choose no sign-in. If it only takes a URL, as ChatGPT does, put the token at the end with <code>?key=YOUR_TOKEN</code>.</p>
+          <p>In Claude it's under <b>Settings → Connectors</b>, and it then works in the desktop and phone apps too. In ChatGPT, turn on Developer mode under <b>Settings → Apps &amp; Connectors</b>. In Grok, use <b>grok.com/connectors</b>. In Claude Code, run the command shown.</p>
+          <p>Replace <code>YOUR_TOKEN</code> with your access token, and never paste the token into a chat.</p>
+        </div>
         <div class="window code-window">
-          <div class="titlebar"><span class="lights"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span>Custom connector</div>
-          <pre><span class="k">URL</span>
+          <div class="titlebar"><span class="lights"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span>Connection details</div>
+          <pre><span class="k">Server address</span>
 <span class="s" data-fill>/mcp</span>
 
-<span class="k">Authentication</span>
-No sign in
-
-<span class="k">Request header</span>
-Authorization: <span class="t">Bearer YOUR_TOKEN</span></pre>
-        </div>
-      </div>
-
-      <div class="panel" role="tabpanel" id="p-code" aria-labelledby="t-code" hidden>
-        <ol>
-          <li><span>Run the command in your terminal, with your token in place of <code>YOUR_TOKEN</code>.</span></li>
-          <li><span>Check it with <code>claude mcp list</code>. It should say <b>Connected</b>.</span></li>
-          <li><span>Start a new session and ask "How did I do today?"</span></li>
-        </ol>
-        <div class="window code-window">
-          <div class="titlebar"><span class="lights"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span>Terminal</div>
-          <pre id="cc-cmd"><span class="k">$</span> claude mcp add --transport http -s user google-health <span class="s" data-fill>/mcp</span> --header "Authorization: <span class="t">Bearer YOUR_TOKEN</span>"</pre>
-          <div class="code-foot"><button class="btn" type="button" data-copy="cc-cmd" data-strip="$ ">Copy command</button></div>
-        </div>
-      </div>
-
-      <div class="panel" role="tabpanel" id="p-chatgpt" aria-labelledby="t-chatgpt" hidden>
-        <ol>
-          <li><span>Open <b>Settings → Apps &amp; Connectors → Advanced</b> and turn on <b>Developer mode</b>. Needs a paid plan.</span></li>
-          <li><span>Create a connector with authentication <b>No authentication</b>.</span></li>
-          <li><span>Use the URL shown here. ChatGPT can't send headers, so the token goes in the URL.</span></li>
-        </ol>
-        <div class="window code-window">
-          <div class="titlebar"><span class="lights"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span>New connector</div>
-          <pre><span class="k">MCP server URL</span>
-<span class="s" data-fill>/mcp</span>?key=<span class="t">YOUR_TOKEN</span>
-
-<span class="k">Authentication</span>
-No authentication</pre>
-        </div>
-      </div>
-
-      <div class="panel" role="tabpanel" id="p-other" aria-labelledby="t-other" hidden>
-        <ol>
-          <li><span>Grok: <b>grok.com/connectors → New Connector → Custom</b>.</span></li>
-          <li><span>Any app that supports remote MCP over <b>Streamable HTTP</b> works the same way.</span></li>
-          <li><span>Prefer the header. Use the <code>?key=</code> URL only when the app has no header field.</span></li>
-        </ol>
-        <div class="window code-window">
-          <div class="titlebar"><span class="lights"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span>Remote MCP</div>
-          <pre><span class="k">URL</span>
-<span class="s" data-fill>/mcp</span>
-
-<span class="k">Header</span>
+<span class="k">Header, where the app allows it</span>
 Authorization: <span class="t">Bearer YOUR_TOKEN</span>
 
-<span class="k">Or, without headers</span>
-<span class="s" data-fill>/mcp</span>?key=<span class="t">YOUR_TOKEN</span></pre>
+<span class="k">URL only, for apps without headers</span>
+<span class="s" data-fill>/mcp</span>?key=<span class="t">YOUR_TOKEN</span>
+
+<span class="k">Claude Code</span>
+<span id="cc-cmd">claude mcp add --transport http -s user google-health <span class="s" data-fill>/mcp</span> --header "Authorization: <span class="t">Bearer YOUR_TOKEN</span>"</span></pre>
+          <div class="code-foot"><button class="btn" type="button" data-copy="cc-cmd">Copy Claude Code command</button></div>
         </div>
       </div>
     </div>
@@ -396,16 +336,6 @@ Authorization: <span class="t">Bearer YOUR_TOKEN</span>
     });
   }
 
-  const tabs = [...document.querySelectorAll('[role="tab"]')];
-  for (const tab of tabs) {
-    tab.addEventListener("click", () => {
-      for (const t of tabs) {
-        const selected = t === tab;
-        t.setAttribute("aria-selected", String(selected));
-        document.getElementById(t.getAttribute("aria-controls")).hidden = !selected;
-      }
-    });
-  }
 </script>
 </body>
 </html>
