@@ -1,5 +1,7 @@
 # google-health-mcp
 
+> **Unofficial.** This is a community project. It is not made, endorsed or supported by Google or Fitbit.
+
 Ask Claude, ChatGPT or Grok about your Fitbit data: "How did I sleep last night?", "Steps per day this month?", "Is my resting heart rate trending down?"
 
 This is a read-only [MCP](https://modelcontextprotocol.io) server for the **Google Health API v4**, which replaced the Fitbit Web API on 2 November 2026. It works with any Fitbit or Pixel Watch that syncs to the Google Health (Fitbit) app. You deploy it once to Vercel (free), sign in with Google in your browser, and connect your AI apps to it. Nothing runs on your computer.

@@ -1,7 +1,7 @@
 {
   "name": "google-health-mcp",
   "version": "0.1.0",
-  "description": "Read-only MCP server for the Google Health API (Fitbit, Pixel Watch). Works with Claude (stdio) and Grok (remote HTTP).",
+  "description": "Unofficial read-only MCP server for the Google Health API (Fitbit, Pixel Watch). Works with Claude, ChatGPT and Grok. Not affiliated with Google or Fitbit.",
   "type": "module",
   "bin": {
     "google-health-mcp": "dist/index.js"
