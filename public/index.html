@@ -151,7 +151,7 @@
     </a>
     <div class="nav-actions">
       <a class="btn" href="https://github.com/gokulkrishh/google-health-mcp" rel="noopener">GitHub</a>
-      <a class="btn btn-primary" href="/auth">Sign in<span class="hide-sm">&nbsp;with Google</span></a>
+      <a class="btn btn-primary" href="#connect">Connect<span class="hide-sm">&nbsp;an app</span></a>
     </div>
   </div>
 </nav>
@@ -226,28 +226,28 @@
     </div>
   </section>
 
-  <section id="connect">
+  <section>
     <div class="wrap">
-      <h2>Set up in two steps</h2>
-      <p class="section-lede">Sign in with Google once, then add the server to the AI apps you use.</p>
+      <h2>Ready to connect</h2>
+      <p class="section-lede">Copy your server address, then add it to the AI apps you use.</p>
       <div class="steps">
         <div class="step">
           <span class="step-n">01</span>
-          <h3>Connect your Google account</h3>
-          <p>Lets this server read your Fitbit data. You only redo it if Google ends the sign-in.</p>
-          <a class="btn btn-primary" href="/auth">Sign in with Google</a>
-        </div>
-        <div class="step">
-          <span class="step-n">02</span>
           <h3>Copy your server address</h3>
           <p>Paste it into your AI app with your access token (<span class="mono">MCP_HTTP_TOKEN</span>). Treat the token like a password.</p>
-          <div class="url-box"><code id="step-url">/mcp</code><button class="btn" type="button" data-copy="step-url">Copy</button></div>
+          <div class="url-box"><code id="step-url">/mcp</code><button class="btn btn-primary" type="button" data-copy="step-url">Copy</button></div>
+        </div>
+        <div class="step">
+          <span class="step-n">One-time</span>
+          <h3>Google account</h3>
+          <p>Already done if you have signed in once. Only needed again if Google ends the sign-in, for example after you change your password.</p>
+          <a class="btn" href="/auth">Reconnect Google</a>
         </div>
       </div>
     </div>
   </section>
 
-  <section>
+  <section id="connect">
     <div class="wrap">
       <h2>Add it to your AI app</h2>
       <p class="section-lede">Pick your app. Replace <span class="mono">YOUR_TOKEN</span> with your access token, and never paste the token into a chat.</p>
