@@ -65,6 +65,9 @@ function loadClient(): Client {
   const envSecret = process.env.GOOGLE_CLIENT_SECRET;
   if (envId && envSecret) return { clientId: envId, clientSecret: envSecret };
 
+  if (process.env.VERCEL) {
+    throw new AuthError("Google OAuth client is not configured. Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in Vercel (Settings → Environment Variables), then redeploy.");
+  }
   if (!existsSync(CREDENTIALS_PATH)) {
     throw new AuthError(
       "No OAuth client found. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET (required on hosted deploys such as Vercel), " +
