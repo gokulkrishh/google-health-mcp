@@ -5,10 +5,131 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <title>Google Health MCP</title>
-<style>body{font:16px/1.5 system-ui,sans-serif;max-width:40rem;margin:4rem auto;padding:0 1rem;color:#222;background:#fff}code{background:#f2f2f2;padding:.1em .3em;border-radius:4px}@media (prefers-color-scheme:dark){body{color:#ddd;background:#111}code{background:#222}}</style>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1d1d1f; --muted: #5f6368; --line: #e3e3e6;
+    --card: #f7f7f8; --code: #eef0f2; --accent: #1a73e8; --warn-bg: #fff6e0; --warn-fg: #6b4e00;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #121214; --fg: #e8e8ea; --muted: #a0a3a8; --line: #2c2c31;
+      --card: #1b1b1f; --code: #26262b; --accent: #8ab4f8; --warn-bg: #2e2612; --warn-fg: #f3d58a;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 44rem; margin: 0 auto; padding: 3rem 16px 4rem; }
+  h1 { font-size: 1.9rem; margin: 0 0 .25rem; letter-spacing: -.01em; }
+  h2 { font-size: 1.15rem; margin: 2.25rem 0 .6rem; }
+  h3 { font-size: 1rem; margin: 1.25rem 0 .35rem; }
+  p, li { color: var(--fg); }
+  .lede { color: var(--muted); margin: 0 0 1.25rem; }
+  .note { background: var(--warn-bg); color: var(--warn-fg); border-radius: 8px; padding: .6rem .85rem; font-size: .92rem; }
+  a { color: var(--accent); }
+  code { background: var(--code); padding: .1em .35em; border-radius: 4px; font-size: .9em; word-break: break-all; }
+  .url { display: flex; gap: .5rem; align-items: stretch; margin: .5rem 0; }
+  .url code { flex: 1; display: flex; align-items: center; padding: .55rem .7rem; font-size: .95rem; }
+  button { font: inherit; font-size: .9rem; border: 1px solid var(--line); background: var(--card); color: var(--fg); border-radius: 6px; padding: .45rem .8rem; cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: .25rem 1rem .75rem; margin: .75rem 0; }
+  ol { padding-left: 1.3rem; }
+  li { margin: .25rem 0; }
+  pre { background: var(--code); border-radius: 6px; padding: .7rem .8rem; overflow-x: auto; font-size: .85rem; margin: .5rem 0; }
+  pre code { background: none; padding: 0; word-break: normal; }
+  .cta { display: inline-block; background: var(--accent); color: var(--bg); text-decoration: none; padding: .55rem 1rem; border-radius: 6px; font-weight: 600; }
+  footer { margin-top: 3rem; color: var(--muted); font-size: .88rem; }
+</style>
 </head>
 <body>
-<h1>Google Health MCP</h1>
-<p>Private MCP server. Connect an MCP client to <code>/mcp</code> with your access token.</p>
+<main>
+  <h1>Google Health MCP</h1>
+  <p class="lede">A private, read-only MCP server that lets AI apps like Claude, ChatGPT and Grok answer questions about your Fitbit and Pixel Watch data, such as sleep, steps, heart rate and weight.</p>
+  <p class="note"><strong>Unofficial.</strong> A community project, not made or supported by Google or Fitbit. It can only read your data, never change it.</p>
+
+  <h2>What is MCP?</h2>
+  <p>The <a href="https://modelcontextprotocol.io" rel="noopener">Model Context Protocol</a> is a standard way for AI apps to use outside tools. Once you add this server to an app, you can ask things like "How did I sleep last night?" or "Show my steps for the last week" and it fetches the answer from your Google Health account.</p>
+
+  <h2>Your server address</h2>
+  <div class="url"><code id="mcp-url">/mcp</code><button type="button" data-copy="mcp-url">Copy</button></div>
+  <p>Every app also needs your <strong>access token</strong> (the <code>MCP_HTTP_TOKEN</code> you set in Vercel). Treat it like a password: anyone with it can read your health data. Never paste it into a chat.</p>
+
+  <h2>Step 1. Connect your Google account (once)</h2>
+  <p>This lets the server read your Fitbit data. You only redo it if Google ends the sign-in.</p>
+  <p><a class="cta" href="/auth">Sign in with Google</a></p>
+
+  <h2>Step 2. Add it to your AI app</h2>
+
+  <div class="card">
+    <h3>Claude (web, desktop and mobile)</h3>
+    <ol>
+      <li>Open claude.ai → <strong>Settings → Connectors → Add custom connector</strong>.</li>
+      <li>Name it <code>Google Health</code> and paste the server address above.</li>
+      <li>Authentication: <strong>No sign in</strong>.</li>
+      <li>Under <strong>Request headers</strong> add <code>Authorization</code> with the value <code>Bearer YOUR_TOKEN</code> (with a space after "Bearer").</li>
+      <li>In a chat, turn on <strong>Google Health</strong> from the tools menu.</li>
+    </ol>
+    <p>It then works in the Claude desktop and phone apps too.</p>
+  </div>
+
+  <div class="card">
+    <h3>Claude Code</h3>
+    <p>Run in your terminal, replacing <code>YOUR_TOKEN</code>:</p>
+    <pre><code id="cc-cmd">claude mcp add --transport http -s user google-health /mcp --header "Authorization: Bearer YOUR_TOKEN"</code></pre>
+    <button type="button" data-copy="cc-cmd">Copy command</button>
+    <p>Then check it with <code>claude mcp list</code>.</p>
+  </div>
+
+  <div class="card">
+    <h3>ChatGPT</h3>
+    <ol>
+      <li><strong>Settings → Apps &amp; Connectors → Advanced</strong>, turn on <strong>Developer mode</strong> (paid plans).</li>
+      <li>Create a connector with authentication <strong>No authentication</strong> and this URL, replacing <code>YOUR_TOKEN</code>:</li>
+    </ol>
+    <pre><code id="key-url">/mcp?key=YOUR_TOKEN</code></pre>
+  </div>
+
+  <div class="card">
+    <h3>Grok and other apps</h3>
+    <p>Grok: <strong>grok.com/connectors → New Connector → Custom</strong>. Any app that supports remote MCP servers ("Streamable HTTP") works: use the server address with an <code>Authorization: Bearer YOUR_TOKEN</code> header, or the <code>?key=</code> URL if the app has no header field.</p>
+  </div>
+
+  <h2>Try asking</h2>
+  <ul>
+    <li>"How did I do today?"</li>
+    <li>"How did I sleep last night?"</li>
+    <li>"Steps per day for the last 2 weeks, as a table."</li>
+    <li>"Is my resting heart rate going up or down this month?"</li>
+  </ul>
+
+  <h2>Troubleshooting</h2>
+  <ul>
+    <li><strong>"Not signed in"</strong>: use the Sign in with Google button above.</li>
+    <li><strong>"Unauthorized" or "credential rejected"</strong>: the token in your app is wrong or was changed. Update it.</li>
+    <li><strong>No data for today</strong>: open the Fitbit app so your tracker syncs. Sleep and resting heart rate appear after a night's wear.</li>
+    <li>Server status: <a href="/healthz">/healthz</a> should say <code>ok</code>.</li>
+  </ul>
+
+  <footer>Source and full setup guide: <a href="https://github.com/gokulkrishh/google-health-mcp" rel="noopener">github.com/gokulkrishh/google-health-mcp</a></footer>
+</main>
+<script>
+  const origin = location.origin;
+  for (const id of ["mcp-url", "cc-cmd", "key-url"]) {
+    const el = document.getElementById(id);
+    el.textContent = el.textContent.replace("/mcp", origin + "/mcp");
+  }
+  for (const button of document.querySelectorAll("[data-copy]")) {
+    button.addEventListener("click", async () => {
+      const text = document.getElementById(button.dataset.copy).textContent;
+      try {
+        await navigator.clipboard.writeText(text);
+        const label = button.textContent;
+        button.textContent = "Copied";
+        setTimeout(() => (button.textContent = label), 1500);
+      } catch {
+        button.textContent = "Select and copy manually";
+      }
+    });
+  }
+</script>
 </body>
 </html>

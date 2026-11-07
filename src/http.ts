@@ -54,7 +54,8 @@ function signInCookie(value: string, maxAge: number): string {
 }
 
 const SIGN_IN_FORM = `<p>Enter your MCP access token (<code>MCP_HTTP_TOKEN</code>) to connect this server to your Google Health account.</p>
-<form method="post" action="/auth"><input type="password" name="key" autocomplete="current-password" required aria-label="MCP access token"><button type="submit">Continue to Google sign-in</button></form>`;
+<form method="post" action="/auth"><input type="password" name="key" autocomplete="current-password" required aria-label="MCP access token"><button type="submit">Continue to Google sign-in</button></form>
+<p><a href="/">Back to the setup guide</a></p>`;
 
 /**
  * Stateless Streamable HTTP handler shared by `serve --http` and the Vercel function.
@@ -104,7 +105,13 @@ export function createMcpHttpHandler(rawToken = process.env.MCP_HTTP_TOKEN ?? ""
     } catch (err) {
       linkStatus = `<p>Signed in, but Google Health said: ${escapeHtml(err instanceof Error ? err.message : String(err))}</p>`;
     }
-    sendPage(res, 200, "Connected", `${linkStatus}<p>Granted access: <code>${escapeHtml(scopes)}</code></p>`, clear);
+    sendPage(
+      res,
+      200,
+      "Connected",
+      `${linkStatus}<p>Granted access: <code>${escapeHtml(scopes)}</code></p><p><a href="/">Next: add this server to Claude, ChatGPT or another AI app</a></p>`,
+      clear,
+    );
   }
 
   async function handleMcp(req: IncomingMessage, res: ServerResponse, url: URL): Promise<void> {
