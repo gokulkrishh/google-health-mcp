@@ -10,6 +10,7 @@ import {
   buildDailyRollUpBody,
   buildListFilter,
   buildRollUpBody,
+  dateInTimeZone,
   maxListPageSize,
   maxRollupDays,
   requireList,
@@ -39,8 +40,13 @@ async function run(fn: () => Promise<unknown>): Promise<CallToolResult> {
   }
 }
 
-function today(): string {
-  return new Date().toLocaleDateString("en-CA");
+async function today(client: HealthClient): Promise<string> {
+  const timeZone = await client.timeZone().catch(() => undefined);
+  try {
+    return dateInTimeZone(new Date(), timeZone);
+  } catch {
+    return dateInTimeZone(new Date());
+  }
 }
 
 async function allPages<T extends { rollupDataPoints?: unknown[]; nextPageToken?: string }>(fetchPage: (pageToken?: string) => Promise<T>) {
@@ -86,12 +92,12 @@ export function createServer(client = new HealthClient()): McpServer {
       title: "Daily health summary",
       description:
         "One-call overview of a single day: steps, distance, calories, active zone minutes, floors, resting heart rate, HRV, sleep that ended that day, and exercise sessions. Start here for questions like 'how did I do today/yesterday'.",
-      inputSchema: { date: dateString.optional().describe("Local date YYYY-MM-DD. Defaults to today.") },
+      inputSchema: { date: dateString.optional().describe("Local date YYYY-MM-DD. Defaults to today in the user's Google Health time zone.") },
       annotations: READ_ONLY,
     },
     async ({ date }) =>
       run(async () => {
-        const day = date ?? today();
+        const day = date ?? (await today(client));
         const rollups = ["steps", "distance", "total-calories", "active-zone-minutes", "active-minutes", "floors"] as const;
         const lists = ["daily-resting-heart-rate", "daily-heart-rate-variability", "sleep", "exercise"] as const;
         const jobs: [string, Promise<unknown>][] = [

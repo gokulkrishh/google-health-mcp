@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { InputError, buildDailyRollUpBody, buildListFilter, buildRollUpBody } from "./dataTypes.js";
+import { InputError, buildDailyRollUpBody, buildListFilter, buildRollUpBody, dateInTimeZone } from "./dataTypes.js";
 
 test("list filters match the examples in the v4 discovery document", () => {
   assert.equal(
@@ -77,4 +77,11 @@ test("rollUp body converts to UTC timestamps and a Duration window", () => {
 
 test("operations a type does not support are rejected before any request", () => {
   assert.throws(() => buildDailyRollUpBody("sleep", "2026-11-01", "2026-11-07"), /does not support rollups/);
+});
+
+test("today is taken from the user's time zone, not the server clock", () => {
+  const earlyMorningInIndia = new Date("2026-11-07T20:30:00Z");
+  assert.equal(dateInTimeZone(earlyMorningInIndia, "Asia/Kolkata"), "2026-11-08");
+  assert.equal(dateInTimeZone(earlyMorningInIndia, "UTC"), "2026-11-07");
+  assert.equal(dateInTimeZone(earlyMorningInIndia, "America/Los_Angeles"), "2026-11-07");
 });

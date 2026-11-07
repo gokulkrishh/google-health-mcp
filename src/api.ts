@@ -31,10 +31,13 @@ function explain(status: number, body: GoogleError): string {
 type Query = Record<string, string | number | undefined>;
 
 export class HealthClient {
+  private timeZoneLookup?: Promise<string | undefined>;
+
   constructor(private readonly tokens = new TokenManager()) {}
 
   resetAuth(): void {
     this.tokens.reset();
+    this.timeZoneLookup = undefined;
   }
 
   private async request<T>(method: "GET" | "POST", path: string, query?: Query, body?: unknown): Promise<T> {
@@ -75,6 +78,17 @@ export class HealthClient {
 
   settings() {
     return this.request<unknown>("GET", "users/me/settings");
+  }
+
+  /** The user's IANA time zone from Google Health settings, looked up once per instance. */
+  timeZone(): Promise<string | undefined> {
+    this.timeZoneLookup ??= this.request<{ timeZone?: string }>("GET", "users/me/settings")
+      .then((s) => s.timeZone)
+      .catch((err) => {
+        this.timeZoneLookup = undefined;
+        throw err;
+      });
+    return this.timeZoneLookup;
   }
 
   pairedDevices(pageSize = 100) {

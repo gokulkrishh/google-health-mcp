@@ -107,6 +107,11 @@ export function formatDate(d: CivilDate): string {
   return `${d.year}-${String(d.month).padStart(2, "0")}-${String(d.day).padStart(2, "0")}`;
 }
 
+/** Calendar date (YYYY-MM-DD) of `now` in an IANA time zone; the process time zone when omitted. */
+export function dateInTimeZone(now: Date, timeZone?: string): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
+}
+
 export function addDays(value: string, days: number): string {
   const { year, month, day } = parseDate(value);
   const t = new Date(Date.UTC(year, month - 1, day + days));
