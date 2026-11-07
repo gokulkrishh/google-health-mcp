@@ -4,6 +4,7 @@ import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "
 import { createServer } from "node:http";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { get as blobGet, put as blobPut } from "@vercel/blob";
 
 const AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 const TOKEN_URL = "https://oauth2.googleapis.com/token";
@@ -29,6 +30,9 @@ const TOKEN_PATH = join(HOME, "token.json");
 const PORT = Number(process.env.GOOGLE_HEALTH_OAUTH_PORT ?? 8765);
 export const REDIRECT_URI = `http://127.0.0.1:${PORT}/oauth2callback`;
 
+const BLOB_PATH = "google-health-mcp/sign-in.json";
+const USE_BLOB = Boolean(process.env.BLOB_STORE_ID || process.env.BLOB_READ_WRITE_TOKEN);
+
 export class AuthError extends Error {}
 
 interface Client {
@@ -41,6 +45,19 @@ interface StoredToken {
   access_token?: string;
   expiry_date?: number;
   scope?: string;
+}
+
+/** The fixed public origin of a hosted deploy, used for the web sign-in redirect URI. */
+export function publicBaseUrl(): string | undefined {
+  const explicit = process.env.PUBLIC_BASE_URL;
+  if (explicit) return explicit.replace(/\/+$/, "");
+  const vercel = process.env.VERCEL_PROJECT_PRODUCTION_URL;
+  return vercel ? `https://${vercel}` : undefined;
+}
+
+function signInHint(): string {
+  const base = publicBaseUrl();
+  return base ? `Open ${base}/auth in your browser to sign in.` : "Run `google-health-mcp auth` on your computer.";
 }
 
 function loadClient(): Client {
@@ -70,7 +87,7 @@ function requestedScopes(): string[] {
   });
 }
 
-function readToken(): StoredToken | undefined {
+function readTokenFile(): StoredToken | undefined {
   if (!existsSync(TOKEN_PATH)) return undefined;
   try {
     return JSON.parse(readFileSync(TOKEN_PATH, "utf8")) as StoredToken;
@@ -79,11 +96,49 @@ function readToken(): StoredToken | undefined {
   }
 }
 
-function writeToken(token: StoredToken): void {
+function writeTokenFile(token: StoredToken): void {
   mkdirSync(HOME, { recursive: true, mode: 0o700 });
   const tmp = `${TOKEN_PATH}.${process.pid}.tmp`;
   writeFileSync(tmp, JSON.stringify(token, null, 2), { mode: 0o600 });
   renameSync(tmp, TOKEN_PATH);
+}
+
+async function readTokenBlob(): Promise<StoredToken | undefined> {
+  let result;
+  try {
+    result = await blobGet(BLOB_PATH, { access: "private", useCache: false });
+  } catch (err) {
+    throw new AuthError(`Could not read the saved Google sign-in from Vercel Blob: ${err instanceof Error ? err.message : String(err)}`);
+  }
+  if (result?.statusCode !== 200 || !result.stream) return undefined;
+  return JSON.parse(await new Response(result.stream).text()) as StoredToken;
+}
+
+type TokenSource = "blob" | "env" | "file";
+
+/** Precedence: a web sign-in saved in Blob, then GOOGLE_REFRESH_TOKEN, then the local token file. */
+async function loadStoredToken(): Promise<{ token: StoredToken; source: TokenSource } | undefined> {
+  if (USE_BLOB) {
+    const token = await readTokenBlob();
+    if (token?.refresh_token) return { token, source: "blob" };
+  }
+  const envRefreshToken = process.env.GOOGLE_REFRESH_TOKEN;
+  if (envRefreshToken) return { token: { refresh_token: envRefreshToken }, source: "env" };
+  const file = readTokenFile();
+  return file?.refresh_token ? { token: file, source: "file" } : undefined;
+}
+
+async function saveRefreshToken(token: StoredToken): Promise<string> {
+  if (USE_BLOB) {
+    await blobPut(BLOB_PATH, JSON.stringify({ refresh_token: token.refresh_token, scope: token.scope }), {
+      access: "private",
+      allowOverwrite: true,
+      contentType: "application/json",
+    });
+    return "Vercel Blob";
+  }
+  writeTokenFile(token);
+  return TOKEN_PATH;
 }
 
 function accessTokenFrom(body: Record<string, unknown>): string {
@@ -96,13 +151,13 @@ async function postToken(params: Record<string, string>): Promise<Record<string,
     method: "POST",
     headers: { "content-type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams(params),
+    signal: AbortSignal.timeout(30_000),
   });
   const body = (await res.json().catch(() => ({}))) as Record<string, unknown>;
   if (!res.ok) {
     if (body.error === "invalid_grant") {
       throw new AuthError(
-        "Google rejected the saved refresh token (it expired or was revoked). Apps in Testing mode get tokens that expire after 7 days. " +
-          "Run `google-health-mcp auth` again.",
+        "Google rejected the saved sign-in (it expired or was revoked). Apps in Testing mode get sign-ins that expire after 7 days. " + signInHint(),
       );
     }
     throw new AuthError(`Token request failed: ${body.error ?? res.status} ${body.error_description ?? ""}`.trim());
@@ -122,12 +177,15 @@ export class TokenManager {
     return this.inFlight;
   }
 
+  /** Drops the cached access token so the next call picks up a new sign-in. */
+  reset(): void {
+    this.cached = undefined;
+  }
+
   private async refresh(forceRefresh: boolean): Promise<string> {
-    const envRefreshToken = process.env.GOOGLE_REFRESH_TOKEN;
-    const stored = envRefreshToken ? { refresh_token: envRefreshToken } : readToken();
-    if (!stored?.refresh_token) {
-      throw new AuthError("Not signed in to Google Health yet. Run `google-health-mcp auth` on your computer, or on a hosted deploy set GOOGLE_REFRESH_TOKEN, GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.");
-    }
+    const loaded = await loadStoredToken();
+    if (!loaded) throw new AuthError(`Not signed in to Google Health yet. ${signInHint()}`);
+    const { token: stored, source } = loaded;
     if (!forceRefresh && stored.access_token && stored.expiry_date && stored.expiry_date - Date.now() > 60_000) {
       this.cached = { token: stored.access_token, expiresAt: stored.expiry_date };
       return stored.access_token;
@@ -142,10 +200,61 @@ export class TokenManager {
     });
     const token = accessTokenFrom(body);
     const expiresAt = Date.now() + Number(body.expires_in ?? 3600) * 1000;
-    if (!envRefreshToken) writeToken({ ...stored, access_token: token, expiry_date: expiresAt });
+    if (source === "file") writeTokenFile({ ...stored, access_token: token, expiry_date: expiresAt });
     this.cached = { token, expiresAt };
     return token;
   }
+}
+
+export interface SignInStart {
+  url: string;
+  state: string;
+  verifier: string;
+}
+
+/** Builds a Google authorization URL with PKCE (S256) and a random state for the given redirect URI. */
+export function startSignIn(redirectUri: string): SignInStart {
+  const client = loadClient();
+  const verifier = randomBytes(32).toString("base64url");
+  const challenge = createHash("sha256").update(verifier).digest("base64url");
+  const state = randomBytes(16).toString("base64url");
+  const url = new URL(AUTH_URL);
+  url.search = new URLSearchParams({
+    client_id: client.clientId,
+    redirect_uri: redirectUri,
+    response_type: "code",
+    scope: requestedScopes().join(" "),
+    access_type: "offline",
+    prompt: "consent",
+    state,
+    code_challenge: challenge,
+    code_challenge_method: "S256",
+  }).toString();
+  return { url: url.toString(), state, verifier };
+}
+
+/** Exchanges the authorization code and saves the refresh token. Returns where it was saved and the granted scopes. */
+export async function completeSignIn(code: string, verifier: string, redirectUri: string): Promise<{ savedTo: string; scopes: string }> {
+  const client = loadClient();
+  const body = await postToken({
+    grant_type: "authorization_code",
+    code,
+    code_verifier: verifier,
+    redirect_uri: redirectUri,
+    client_id: client.clientId,
+    client_secret: client.clientSecret,
+  });
+  if (typeof body.refresh_token !== "string") {
+    throw new AuthError("Google did not return a refresh token. Remove the app at https://myaccount.google.com/connections and sign in again.");
+  }
+  const scope = String(body.scope ?? "");
+  const savedTo = await saveRefreshToken({
+    refresh_token: body.refresh_token,
+    access_token: accessTokenFrom(body),
+    expiry_date: Date.now() + Number(body.expires_in ?? 3600) * 1000,
+    scope,
+  });
+  return { savedTo, scopes: scope.replaceAll(SCOPE_PREFIX, "") };
 }
 
 function openBrowser(url: string): void {
@@ -192,50 +301,14 @@ function waitForCode(expectedState: string): Promise<string> {
   });
 }
 
-/** Interactive OAuth flow: opens the browser, receives the code on the loopback redirect, and saves the refresh token. */
+/** Terminal sign-in: opens the browser, receives the code on the loopback redirect, and saves the refresh token. */
 export async function runAuthFlow(): Promise<void> {
-  const client = loadClient();
-  const scopes = requestedScopes();
-  const verifier = randomBytes(32).toString("base64url");
-  const challenge = createHash("sha256").update(verifier).digest("base64url");
-  const state = randomBytes(16).toString("base64url");
-
-  const url = new URL(AUTH_URL);
-  url.search = new URLSearchParams({
-    client_id: client.clientId,
-    redirect_uri: REDIRECT_URI,
-    response_type: "code",
-    scope: scopes.join(" "),
-    access_type: "offline",
-    prompt: "consent",
-    state,
-    code_challenge: challenge,
-    code_challenge_method: "S256",
-  }).toString();
-
+  const { url, state, verifier } = startSignIn(REDIRECT_URI);
   console.error(`Redirect URI (must be listed on your OAuth client): ${REDIRECT_URI}`);
   console.error(`\nOpening your browser. If it does not open, visit:\n${url}\n`);
   const codePromise = waitForCode(state);
-  openBrowser(url.toString());
-  const code = await codePromise;
-
-  const body = await postToken({
-    grant_type: "authorization_code",
-    code,
-    code_verifier: verifier,
-    redirect_uri: REDIRECT_URI,
-    client_id: client.clientId,
-    client_secret: client.clientSecret,
-  });
-  if (!body.refresh_token) {
-    throw new AuthError("Google did not return a refresh token. Remove the app at https://myaccount.google.com/connections and run auth again.");
-  }
-  writeToken({
-    refresh_token: String(body.refresh_token),
-    access_token: accessTokenFrom(body),
-    expiry_date: Date.now() + Number(body.expires_in ?? 3600) * 1000,
-    scope: String(body.scope ?? ""),
-  });
-  console.error(`Saved token to ${TOKEN_PATH}`);
-  console.error(`Granted scopes: ${String(body.scope ?? "").replaceAll(SCOPE_PREFIX, "")}`);
+  openBrowser(url);
+  const { savedTo, scopes } = await completeSignIn(await codePromise, verifier, REDIRECT_URI);
+  console.error(`Saved sign-in to ${savedTo}`);
+  console.error(`Granted scopes: ${scopes}`);
 }

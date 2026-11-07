@@ -4,6 +4,8 @@
   "outputDirectory": "public",
   "rewrites": [
     { "source": "/mcp", "destination": "/api/mcp" },
-    { "source": "/healthz", "destination": "/api/mcp" }
+    { "source": "/healthz", "destination": "/api/mcp" },
+    { "source": "/auth", "destination": "/api/mcp" },
+    { "source": "/oauth2callback", "destination": "/api/mcp" }
   ]
 }

@@ -33,6 +33,10 @@ type Query = Record<string, string | number | undefined>;
 export class HealthClient {
   constructor(private readonly tokens = new TokenManager()) {}
 
+  resetAuth(): void {
+    this.tokens.reset();
+  }
+
   private async request<T>(method: "GET" | "POST", path: string, query?: Query, body?: unknown): Promise<T> {
     const url = new URL(path, BASE);
     for (const [k, v] of Object.entries(query ?? {})) if (v !== undefined && v !== "") url.searchParams.set(k, String(v));
