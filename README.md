@@ -176,7 +176,7 @@ The HTTP mode is stateless: each request is independent and the Google access to
    ```
 
    ```bash
-   openssl rand -hex 32 > ~/.config/google-health-mcp/mcp_http_token && chmod 600 ~/.config/google-health-mcp/mcp_http_token
+   openssl rand -hex 32 | tr -d '\n' > ~/.config/google-health-mcp/mcp_http_token && chmod 600 ~/.config/google-health-mcp/mcp_http_token
    ```
 
    ```bash

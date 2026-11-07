@@ -50,8 +50,8 @@ function loadClient(): Client {
 
   if (!existsSync(CREDENTIALS_PATH)) {
     throw new AuthError(
-      `No OAuth client found. Download the client JSON from Google Cloud Console and save it to ${CREDENTIALS_PATH}, ` +
-        "or set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.",
+      "No OAuth client found. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET (required on hosted deploys such as Vercel), " +
+        `or on your computer save the client JSON from Google Cloud Console to ${CREDENTIALS_PATH}.`,
     );
   }
   const raw = JSON.parse(readFileSync(CREDENTIALS_PATH, "utf8"));
@@ -117,7 +117,8 @@ export class TokenManager {
 
   async getAccessToken(forceRefresh = false): Promise<string> {
     if (!forceRefresh && this.cached && this.cached.expiresAt - Date.now() > 60_000) return this.cached.token;
-    this.inFlight ??= this.refresh(forceRefresh).finally(() => (this.inFlight = undefined));
+    if (forceRefresh) return this.refresh(true);
+    this.inFlight ??= this.refresh(false).finally(() => (this.inFlight = undefined));
     return this.inFlight;
   }
 
