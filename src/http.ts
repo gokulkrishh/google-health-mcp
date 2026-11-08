@@ -45,9 +45,20 @@ function setupPage(missing: { googleClient: boolean; blobStore: boolean }): stri
   return `<p>A few things are still needed before this server can read your Fitbit data.</p><ol>${steps.join("")}</ol><p><a href="/">Back to the guide</a></p>`;
 }
 
-const SIGN_IN_FORM = `<p>Enter your MCP access token (<code>MCP_HTTP_TOKEN</code>) to connect this server to your Google Health account.</p>
-<form method="post" action="/auth"><input type="password" name="key" autocomplete="current-password" required aria-label="MCP access token"><button type="submit">Continue to Google sign-in</button></form>
-<p><a href="/">Back to the setup guide</a></p>`;
+const SCOPE_LABELS: Record<string, string> = {
+  "activity_and_fitness.readonly": "Activity & fitness",
+  "health_metrics_and_measurements.readonly": "Heart, SpO2 & body",
+  "sleep.readonly": "Sleep",
+  "profile.readonly": "Profile",
+  "settings.readonly": "Settings",
+  "location.readonly": "GPS routes",
+  "ecg.readonly": "ECG",
+  "irn.readonly": "Irregular rhythm alerts",
+};
+
+const SIGN_IN_FORM = `<p>Connect this server to the Google account your Fitbit syncs with. You only need to do this once.</p>
+<form method="post" action="/auth"><label for="key">Access token (<code>MCP_HTTP_TOKEN</code>)</label><input id="key" type="password" name="key" autocomplete="current-password" required autofocus><button type="submit">Continue with Google</button></form>
+<p class="note">Your token stays on this server. <a href="/">Back to the guide</a></p>`;
 
 /**
  * Stateless Streamable HTTP handler shared by `serve --http` and the Vercel function.
@@ -67,7 +78,7 @@ export function createMcpHttpHandler(rawToken = process.env.MCP_HTTP_TOKEN ?? ""
     if (req.method === "GET") return sendPage(res, 200, "Connect Google Health", SIGN_IN_FORM);
     if (req.method !== "POST") return void res.writeHead(405, { allow: "GET, POST" }).end();
     const form = await readForm(req);
-    if (!matches(form.get("key"))) return sendPage(res, 401, "Connect Google Health", `<p>That access token is not right.</p>${SIGN_IN_FORM}`);
+    if (!matches(form.get("key"))) return sendPage(res, 401, "Connect Google Health", `<p class="error">That access token is not right.</p>${SIGN_IN_FORM}`);
     if (!base) return sendPage(res, 500, "Not configured", "<p>Set <code>PUBLIC_BASE_URL</code> to this server's public https origin.</p>");
     const { url, state, verifier } = startSignIn(`${base}/oauth2callback`);
     const cookie = Buffer.from(JSON.stringify({ state, verifier })).toString("base64url");
@@ -93,19 +104,24 @@ export function createMcpHttpHandler(rawToken = process.env.MCP_HTTP_TOKEN ?? ""
     if (!base) return sendPage(res, 500, "Not configured", "<p>Set <code>PUBLIC_BASE_URL</code>.</p>", clear);
     const { scopes } = await completeSignIn(code, saved.verifier, `${base}/oauth2callback`);
     client.resetAuth();
-    let linkStatus = "<p>Your Google Health account is linked. MCP clients connected to this server can now read your data.</p>";
+    let problem = "";
     try {
       await client.identity();
     } catch (err) {
-      linkStatus = `<p>Signed in, but Google Health said: ${escapeHtml(err instanceof Error ? err.message : String(err))}</p>`;
+      problem = err instanceof Error ? err.message : String(err);
     }
-    sendPage(
-      res,
-      200,
-      "Connected",
-      `${linkStatus}<p>Granted access: <code>${escapeHtml(scopes)}</code></p><p><a href="/">Next: add this server to Claude, ChatGPT or another AI app</a></p>`,
-      clear,
-    );
+    const chips = scopes
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((s) => `<span class="chip">${escapeHtml(SCOPE_LABELS[s] ?? s)}</span>`)
+      .join("");
+    const icon = problem
+      ? '<div class="status"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f5a524" stroke-width="2.2" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/></svg></div>'
+      : '<div class="status"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.4" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>';
+    const message = problem
+      ? `<p>Signed in, but Google Health said: ${escapeHtml(problem)}</p>`
+      : "<p>Your Google Health account is linked. AI apps you connect to this server can now read this data:</p>";
+    sendPage(res, 200, problem ? "Almost there" : "Connected", `${icon}${message}<div class="chips">${chips}</div><a class="button" href="/#connect-app">Connect an AI app</a>`, clear);
   }
 
   async function handleMcp(req: IncomingMessage, res: ServerResponse, url: URL): Promise<void> {

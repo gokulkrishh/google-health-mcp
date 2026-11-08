@@ -114,6 +114,20 @@
   .faq h3 { font-size: 16px; font-weight: 500; margin: 0 0 6px; }
   .faq p { color: var(--muted); margin: 0; }
 
+  dialog { width: min(440px, calc(100vw - 32px)); padding: 28px; border-radius: 14px; border: 1px solid var(--border-strong); background: var(--surface); color: var(--fg); box-shadow: 0 30px 80px rgba(0,0,0,.6); }
+  dialog::backdrop { background: rgba(0,0,0,.65); backdrop-filter: blur(6px); }
+  dialog h3 { font-size: 20px; font-weight: 500; letter-spacing: -.02em; margin: 0 0 10px; }
+  dialog p { color: var(--muted); margin: 0 0 14px; font-size: 15px; }
+  dialog label { display: block; font-size: 13px; color: var(--muted); margin: 14px 0 6px; }
+  dialog input { width: 100%; height: 44px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--border-strong); background: var(--bg); color: var(--fg); font: 14px var(--mono); outline: none; }
+  dialog input:focus { border-color: var(--muted); }
+  dialog .btn-lg { width: 100%; margin-top: 14px; }
+  dialog .x { position: absolute; top: 12px; right: 12px; width: 32px; height: 32px; padding: 0; border: 0; background: transparent; color: var(--muted); font-size: 20px; cursor: pointer; border-radius: 8px; }
+  dialog .x:hover { background: var(--hover); color: var(--fg); }
+  dialog ul { margin: 0 0 14px; padding-left: 18px; color: var(--muted); font-size: 14px; }
+  dialog li { margin: 6px 0; }
+  dialog li b { color: var(--fg); font-weight: 500; }
+  dialog .note { font-size: 13px; color: var(--subtle); margin: 14px 0 0; }
   footer { border-top: 1px solid var(--border); padding: 32px 0 48px; color: var(--subtle); font-size: 14px; }
   footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; }
   footer a { color: var(--muted); text-decoration: none; }
@@ -146,7 +160,7 @@
     </a>
     <div class="nav-actions">
       <a class="btn" href="https://github.com/gokulkrishh/google-health-mcp" rel="noopener">GitHub</a>
-      <a class="btn btn-primary" href="#connect"><span class="hide-sm">Connect an app</span><span class="show-sm">Connect</span></a>
+      <a class="btn btn-primary" href="#connect" data-dialog="connect-dialog"><span class="hide-sm">Connect an app</span><span class="show-sm">Connect</span></a>
     </div>
   </div>
 </nav>
@@ -164,7 +178,7 @@
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
           </button>
         </div>
-        <a class="btn btn-primary btn-lg" href="#connect">Connect an app</a>
+        <a class="btn btn-primary btn-lg" href="#connect" data-dialog="connect-dialog">Connect an app</a>
       </div>
       <div class="meta">Google Health API v4 · MIT · <span class="chip">Unofficial</span></div>
     </div>
@@ -236,7 +250,7 @@
           <span class="step-n">One-time</span>
           <h3>Google account</h3>
           <p>New deploy? This page walks you through the Google setup. Otherwise you only need it again if Google ends the sign-in, for example after a password change.</p>
-          <a class="btn" href="/auth">Reconnect Google</a>
+          <a class="btn" href="/auth" data-dialog="signin-dialog">Sign in with Google</a>
         </div>
       </div>
     </div>
@@ -299,7 +313,7 @@ Authorization: <span class="t">Bearer YOUR_TOKEN</span>
       <h2>Troubleshooting</h2>
       <p class="section-lede">The common fixes.</p>
       <div class="faq">
-        <div><h3>"Not signed in"</h3><p>Use <a href="/auth">Sign in with Google</a>. You only need it again if Google ends the sign-in.</p></div>
+        <div><h3>"Not signed in"</h3><p>Use <a href="/auth" data-dialog="signin-dialog">Sign in with Google</a>. You only need it again if Google ends the sign-in.</p></div>
         <div><h3>"Unauthorized" or "credential rejected"</h3><p>The token in your app is wrong or was changed. Update it in the app's connector settings.</p></div>
         <div><h3>No data for today</h3><p>Open the Fitbit app so your tracker syncs. Sleep and resting heart rate appear after a night's wear.</p></div>
         <div><h3>Is it up?</h3><p><a href="/healthz">/healthz</a> returns <code>ok</code> when the server is running.</p></div>
@@ -307,6 +321,32 @@ Authorization: <span class="t">Bearer YOUR_TOKEN</span>
     </div>
   </section>
 </main>
+
+<dialog id="signin-dialog" aria-labelledby="signin-title">
+  <button class="x" type="button" data-close aria-label="Close">×</button>
+  <h3 id="signin-title">Sign in with Google</h3>
+  <p>Connect this server to the Google account your Fitbit syncs with. You only need to do this once.</p>
+  <form method="post" action="/auth">
+    <label for="signin-key">Access token (<span class="mono">MCP_HTTP_TOKEN</span>)</label>
+    <input id="signin-key" type="password" name="key" autocomplete="current-password" required>
+    <button class="btn btn-primary btn-lg" type="submit">Continue with Google</button>
+  </form>
+  <p class="note">New deploy? You'll see a short setup checklist first.</p>
+</dialog>
+
+<dialog id="connect-dialog" aria-labelledby="connect-title">
+  <button class="x" type="button" data-close aria-label="Close">×</button>
+  <h3 id="connect-title">Connect an app</h3>
+  <p>Add this address as a custom connector, click Connect, and type your access token on the page that opens.</p>
+  <div class="url-box"><code id="dlg-url" data-fill>/mcp</code><button class="btn btn-primary" type="button" data-copy="dlg-url">Copy</button></div>
+  <ul>
+    <li><b>Claude:</b> Settings → Connectors → Add custom connector</li>
+    <li><b>ChatGPT:</b> Developer mode connector, authentication OAuth</li>
+    <li><b>Grok:</b> grok.com/connectors → New Connector → Custom</li>
+    <li><b>Claude Code:</b> <span class="mono">claude mcp add --transport http google-health &lt;address&gt;</span></li>
+  </ul>
+  <p class="note"><a href="#connect" data-close>Full guide and fallbacks</a></p>
+</dialog>
 
 <footer>
   <div class="wrap">
@@ -320,6 +360,22 @@ Authorization: <span class="t">Bearer YOUR_TOKEN</span>
   const mcpUrl = location.origin + "/mcp";
   for (const id of ["hero-url", "step-url"]) document.getElementById(id).textContent = mcpUrl;
   for (const el of document.querySelectorAll("[data-fill]")) el.textContent = mcpUrl;
+
+  for (const trigger of document.querySelectorAll("[data-dialog]")) {
+    trigger.addEventListener("click", (event) => {
+      const dialog = document.getElementById(trigger.dataset.dialog);
+      if (!dialog || typeof dialog.showModal !== "function") return;
+      event.preventDefault();
+      dialog.showModal();
+      dialog.querySelector("input")?.focus();
+    });
+  }
+  if (location.hash === "#connect-app") document.getElementById("connect-dialog")?.showModal?.();
+  for (const dialog of document.querySelectorAll("dialog")) {
+    dialog.addEventListener("click", (event) => {
+      if (event.target === dialog || event.target.closest("[data-close]")) dialog.close();
+    });
+  }
 
   for (const button of document.querySelectorAll("[data-copy]")) {
     button.addEventListener("click", async () => {

@@ -180,7 +180,7 @@ export function createOAuthRoutes(base: string, ownerToken: string, signer: OAut
       res,
       status,
       "Connect an app",
-      `${problem ? `<p><b>${escapeHtml(problem)}</b></p>` : ""}
+      `${problem ? `<p class="error">${escapeHtml(problem)}</p>` : ""}
 <p>An app that returns to <b>${escapeHtml(returnHost)}</b> wants read-only access to your Google Health data on this server. It calls itself "${escapeHtml(p.client.n)}".</p>
 <p class="note">Claude returns to claude.ai, ChatGPT to chatgpt.com, Claude Code to localhost. If the address isn't the app you just used, close this page.</p>
 <form method="post" action="/authorize">
