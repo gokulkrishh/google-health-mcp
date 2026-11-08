@@ -22,7 +22,7 @@ const SCOPES = {
 } as const;
 
 type ScopeName = keyof typeof SCOPES;
-const DEFAULT_SCOPES: ScopeName[] = ["activity", "metrics", "sleep", "profile", "settings", "location"];
+const DEFAULT_SCOPES: ScopeName[] = ["activity", "metrics", "sleep", "profile", "settings", "location", "ecg"];
 
 export const HOME = process.env.GOOGLE_HEALTH_MCP_HOME ?? join(homedir(), ".config", "google-health-mcp");
 const CREDENTIALS_PATH = process.env.GOOGLE_HEALTH_CREDENTIALS ?? join(HOME, "credentials.json");

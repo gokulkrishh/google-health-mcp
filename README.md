@@ -99,7 +99,7 @@ To disconnect Google, remove the app at <https://myaccount.google.com/connection
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Required. Your Google OAuth web client. |
 | Blob store | Required on Vercel. Created by the Deploy button; keeps your Google sign-in. |
 | `PUBLIC_BASE_URL` | Only for custom domains: your public `https://` address. |
-| `GOOGLE_HEALTH_SCOPES` | Scopes to request. Default `activity,metrics,sleep,profile,settings,location`; add `ecg,irn` for ECG data. |
+| `GOOGLE_HEALTH_SCOPES` | Scopes to request. Default `activity,metrics,sleep,profile,settings,location,ecg`; add `irn` for irregular rhythm alerts. |
 | `GOOGLE_REFRESH_TOKEN` | Use a refresh token from elsewhere instead of signing in at `/auth`. |
 
 </details>
