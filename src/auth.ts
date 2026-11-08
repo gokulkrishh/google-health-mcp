@@ -55,6 +55,21 @@ export function publicBaseUrl(): string | undefined {
   return vercel ? `https://${vercel}` : undefined;
 }
 
+/** What a deploy still needs before browser sign-in can work. */
+export function missingSetup(): { googleClient: boolean; blobStore: boolean } {
+  const hasEnvClient = Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
+  const hosted = Boolean(process.env.VERCEL);
+  return {
+    googleClient: !hasEnvClient && (hosted || !existsSync(CREDENTIALS_PATH)),
+    blobStore: hosted && !USE_BLOB,
+  };
+}
+
+/** Full scope URLs requested at sign-in, for display on the setup page. */
+export function requestedScopeIds(): string[] {
+  return requestedScopes();
+}
+
 export function signInHint(): string {
   const base = publicBaseUrl();
   return base ? `Open ${base}/auth in your browser to sign in.` : "Run `google-health-mcp auth` on your computer.";

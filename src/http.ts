@@ -2,7 +2,7 @@ import { createHash, timingSafeEqual } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { HealthClient } from "./api.js";
-import { completeSignIn, publicBaseUrl, startSignIn } from "./auth.js";
+import { completeSignIn, missingSetup, publicBaseUrl, requestedScopeIds, startSignIn } from "./auth.js";
 import { createServer } from "./tools.js";
 
 export const MIN_TOKEN_LENGTH = 32;
@@ -26,7 +26,7 @@ function escapeHtml(value: string): string {
 function sendPage(res: ServerResponse, status: number, title: string, bodyHtml: string, headers: Record<string, string | string[]> = {}): void {
   res.writeHead(status, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "x-frame-options": "DENY", ...headers });
   res.end(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex"><title>${escapeHtml(title)}</title>
-<style>body{font:16px/1.5 system-ui,sans-serif;max-width:32rem;margin:4rem auto;padding:0 1rem;color:#222;background:#fff}input,button{font:inherit;padding:.5rem;width:100%;box-sizing:border-box;margin:.25rem 0}code{background:#f2f2f2;padding:.1em .3em;border-radius:4px}@media (prefers-color-scheme:dark){body{color:#ddd;background:#111}code{background:#222}}</style>
+<style>body{font:16px/1.5 system-ui,sans-serif;max-width:32rem;margin:4rem auto;padding:0 1rem;color:#222;background:#fff}input,button{font:inherit;padding:.5rem;width:100%;box-sizing:border-box;margin:.25rem 0}code{background:#f2f2f2;padding:.1em .3em;border-radius:4px;overflow-wrap:anywhere}code.pick{user-select:all;cursor:pointer}ol ol{margin:.4rem 0}li{margin:.35rem 0}@media (prefers-color-scheme:dark){body{color:#ddd;background:#111}code{background:#222}}</style>
 </head><body><h1>${escapeHtml(title)}</h1>${bodyHtml}</body></html>`);
 }
 
@@ -53,6 +53,28 @@ function signInCookie(value: string, maxAge: number): string {
   return `${SIGN_IN_COOKIE}=${value}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${maxAge}`;
 }
 
+function setupPage(missing: { googleClient: boolean; blobStore: boolean }): string {
+  const base = publicBaseUrl();
+  const redirect = escapeHtml(`${base ?? "https://YOUR-APP"}/oauth2callback`);
+  const scopes = requestedScopeIds().map((s) => `<code>${escapeHtml(s.replace("https://www.googleapis.com/auth/", ""))}</code>`).join(", ");
+  const steps: string[] = [];
+  if (missing.blobStore) {
+    steps.push("<li><b>Add a private Blob store.</b> In Vercel open <b>Storage → Create → Blob</b>, choose <b>Private</b> and connect it to this project.</li>");
+  }
+  if (missing.googleClient) {
+    steps.push(`<li><b>Create a Google sign-in for this app</b> (about 5 minutes):<ol>
+<li><a href="https://console.cloud.google.com/projectcreate" rel="noopener">Create a Google Cloud project</a> (any name).</li>
+<li><a href="https://console.cloud.google.com/apis/library/health.googleapis.com" rel="noopener">Enable the Google Health API</a>.</li>
+<li>In <a href="https://console.cloud.google.com/auth/overview" rel="noopener">Google Auth Platform</a>: fill in <b>Branding</b> (any app name, your email). Under <b>Audience</b> choose <b>External</b>, add your Gmail as a test user, then click <b>Publish app</b> so the sign-in doesn't expire every 7 days.</li>
+<li>Under <b>Data Access</b>, add these scopes: ${scopes}.</li>
+<li>Under <b>Clients</b>, create a <b>Web application</b> client with this redirect URI (click to select): <code class="pick">${redirect}</code></li>
+</ol></li>
+<li><b>Add the client to Vercel.</b> In <b>Settings → Environment Variables</b> add <code>GOOGLE_CLIENT_ID</code> and <code>GOOGLE_CLIENT_SECRET</code>, then <b>Deployments → Redeploy</b>.</li>`);
+  }
+  steps.push("<li>Reload this page and sign in with Google.</li>");
+  return `<p>A few things are still needed before this server can read your Fitbit data.</p><ol>${steps.join("")}</ol><p><a href="/">Back to the guide</a></p>`;
+}
+
 const SIGN_IN_FORM = `<p>Enter your MCP access token (<code>MCP_HTTP_TOKEN</code>) to connect this server to your Google Health account.</p>
 <form method="post" action="/auth"><input type="password" name="key" autocomplete="current-password" required aria-label="MCP access token"><button type="submit">Continue to Google sign-in</button></form>
 <p><a href="/">Back to the setup guide</a></p>`;
@@ -68,6 +90,8 @@ export function createMcpHttpHandler(rawToken = process.env.MCP_HTTP_TOKEN ?? ""
   const client = new HealthClient();
 
   async function handleSignInStart(req: IncomingMessage, res: ServerResponse): Promise<void> {
+    const missing = missingSetup();
+    if (missing.googleClient || missing.blobStore) return sendPage(res, 200, "Finish setup", setupPage(missing));
     if (req.method === "GET") return sendPage(res, 200, "Connect Google Health", SIGN_IN_FORM);
     if (req.method !== "POST") return void res.writeHead(405, { allow: "GET, POST" }).end();
     const form = await readForm(req);
@@ -138,6 +162,9 @@ export function createMcpHttpHandler(rawToken = process.env.MCP_HTTP_TOKEN ?? ""
       url.pathname === "/auth" ? handleSignInStart : url.pathname === "/oauth2callback" ? handleSignInCallback : MCP_PATHS.has(url.pathname) ? handleMcp : undefined;
     if (!route) return void res.writeHead(404).end();
     if (token.length < MIN_TOKEN_LENGTH) {
+      if (route === handleSignInStart) {
+        return sendPage(res, 500, "Finish setup", `<p>Set <code>MCP_HTTP_TOKEN</code> in Vercel (<b>Settings → Environment Variables</b>) to a random password of at least ${MIN_TOKEN_LENGTH} characters, then redeploy.</p>`);
+      }
       return void res.writeHead(500, { "content-type": "text/plain" }).end(`Server misconfigured: MCP_HTTP_TOKEN must be at least ${MIN_TOKEN_LENGTH} characters.`);
     }
     try {
