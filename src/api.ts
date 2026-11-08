@@ -1,4 +1,4 @@
-import { TokenManager } from "./auth.js";
+import { TokenManager, signInHint } from "./auth.js";
 import type { DailyRollUpBody, DataTypeId, RollUpBody } from "./dataTypes.js";
 
 const BASE = "https://health.googleapis.com/v4/";
@@ -23,7 +23,7 @@ function explain(status: number, body: GoogleError): string {
     return "Your Google account has no Google Health profile yet. Sign in to the Google Health (Fitbit) app with this Google account, finish the profile or Fitbit migration, then try again.";
   }
   if (status === 403) {
-    return `Permission denied: ${err?.message ?? "missing scope"}. If this data type needs a scope you did not grant (ECG, IRN), set GOOGLE_HEALTH_SCOPES and run auth again.`;
+    return `Permission denied: ${err?.message ?? "missing scope"}. This data needs a permission that was not granted at sign-in (for example GPS routes, ECG or IRN). ${signInHint()}`;
   }
   return `Google Health API ${status} ${err?.status ?? ""}: ${err?.message ?? "request failed"}`.replace(/\s+/g, " ");
 }
@@ -40,7 +40,7 @@ export class HealthClient {
     this.timeZoneLookup = undefined;
   }
 
-  private async request<T>(method: "GET" | "POST", path: string, query?: Query, body?: unknown): Promise<T> {
+  private async fetchText(method: "GET" | "POST", path: string, query?: Query, body?: unknown): Promise<{ ok: boolean; status: number; text: string }> {
     const url = new URL(path, BASE);
     for (const [k, v] of Object.entries(query ?? {})) if (v !== undefined && v !== "") url.searchParams.set(k, String(v));
 
@@ -57,15 +57,30 @@ export class HealthClient {
 
     let res = await send(false);
     if (res.status === 401) res = await send(true);
-    const text = await res.text();
+    return { ok: res.ok, status: res.status, text: await res.text() };
+  }
+
+  private async request<T>(method: "GET" | "POST", path: string, query?: Query, body?: unknown): Promise<T> {
+    const { ok, status, text } = await this.fetchText(method, path, query, body);
     let json: unknown;
     try {
       json = text ? JSON.parse(text) : {};
     } catch {
-      throw new HealthApiError(res.status, `Google Health API ${res.status}: ${text.slice(0, 200)}`);
+      throw new HealthApiError(status, `Google Health API ${status}: ${text.slice(0, 200)}`);
     }
-    if (!res.ok) throw new HealthApiError(res.status, explain(res.status, json as GoogleError));
+    if (!ok) throw new HealthApiError(status, explain(status, json as GoogleError));
     return json as T;
+  }
+
+  /** Raw TCX (XML) for one exercise session, including its GPS track. */
+  async exerciseTcx(exerciseId: string): Promise<string> {
+    const { ok, status, text } = await this.fetchText("GET", `users/me/dataTypes/exercise/dataPoints/${exerciseId}:exportExerciseTcx`, { alt: "media" });
+    if (ok) return text;
+    let body: GoogleError = {};
+    try {
+      body = JSON.parse(text);
+    } catch {}
+    throw new HealthApiError(status, explain(status, body));
   }
 
   identity() {

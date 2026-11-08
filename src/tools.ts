@@ -4,6 +4,7 @@ import { z } from "zod";
 import { HealthClient } from "./api.js";
 import {
   DATA_TYPES,
+  InputError,
   LISTABLE_IDS,
   ROLLUP_IDS,
   type DataTypeId,
@@ -15,6 +16,7 @@ import {
   maxRollupDays,
   requireList,
 } from "./dataTypes.js";
+import { parseExerciseId, summarizeRoute } from "./tcx.js";
 
 const MAX_OUTPUT_CHARS = 80_000;
 const MAX_ROLLUP_PAGES = 10;
@@ -184,6 +186,27 @@ export function createServer(client = new HealthClient()): McpServer {
         const size = Math.min(pageSize ?? 50, maxListPageSize(dataType));
         const res = await client.listDataPoints(dataType, { filter: effectiveFilter, pageSize: size, pageToken });
         return { dataType, filter: effectiveFilter, ...res };
+      }),
+  );
+
+  server.registerTool(
+    "get_exercise_route",
+    {
+      title: "Workout GPS route",
+      description:
+        "GPS route of one exercise session: distance, duration, elevation gain, heart rate, map bounds and a thinned list of track points (time, lat, lon, altitude, heart rate). Get the exercise id from get_data_points with dataType 'exercise'. Workouts recorded without GPS have no route.",
+      inputSchema: {
+        exercise: z.string().describe("Exercise id, or the full data point name from get_data_points, e.g. users/123/dataTypes/exercise/dataPoints/456."),
+        maxPoints: z.number().int().min(0).max(1000).optional().describe("Most track points to return. Default 200; 0 returns only the summary."),
+      },
+      annotations: READ_ONLY,
+    },
+    async ({ exercise, maxPoints }) =>
+      run(async () => {
+        const id = parseExerciseId(exercise);
+        if (!id) throw new InputError("exercise must be an exercise id or a name like users/123/dataTypes/exercise/dataPoints/456.");
+        const route = summarizeRoute(await client.exerciseTcx(id), maxPoints ?? 200);
+        return route.gpsPointCount ? { exercise: id, ...route } : { exercise: id, ...route, note: "This workout has no GPS data." };
       }),
   );
 

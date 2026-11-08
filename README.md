@@ -29,7 +29,7 @@ It only asks Google for read access, so it can never change or delete your data.
 2. **APIs & Services → Library**: search for **Google Health API** and click **Enable**.
 3. **Google Auth Platform → Branding**: enter an app name and your email.
 4. **Audience**: choose **External**, add your Gmail address under **Test users**, then click **Publish app**. Publishing stops your sign-in from expiring every 7 days. Google will show an "unverified app" warning when you sign in; that is expected for a personal app.
-5. **Data Access → Add or remove scopes**: filter by "Google Health API" and tick the `.readonly` scopes for `activity_and_fitness`, `health_metrics_and_measurements`, `sleep`, `profile` and `settings`. Save.
+5. **Data Access → Add or remove scopes**: filter by "Google Health API" and tick the `.readonly` scopes for `activity_and_fitness`, `health_metrics_and_measurements`, `sleep`, `profile`, `settings` and `location` (GPS routes). Save.
 6. **Clients → Create client → Web application**. Under **Authorized redirect URIs** add `https://YOUR-APP/oauth2callback`. Create it.
 7. Back in Vercel, add `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` from that client as environment variables, then go to **Deployments** and **Redeploy** the latest one.
 
@@ -61,6 +61,7 @@ Menu names in these apps change often; look for "connectors" or "MCP servers". P
 | `get_daily_rollup` | Trends per day or week: steps, distance, heart rate, weight (up to 90 days; 14 for heart rate, active minutes and calories). |
 | `get_rollup` | Hour-by-hour or per-N-minute values, such as heart rate during a run. |
 | `get_data_points` | Raw records: sleep stages, workouts, weight, SpO2, HRV, ECG and more. |
+| `get_exercise_route` | A workout's GPS route: distance, time, elevation, heart rate and track points. |
 | `get_user_info` | Profile, units, time zone and goals. |
 | `list_paired_devices` | Your devices, battery level and last sync. |
 | `list_data_types` | All 35 readable data types. |
@@ -72,6 +73,7 @@ Not available: food and water logs. Google Health API v4 has no read permission 
 | You see | Fix |
 |---|---|
 | `Not signed in to Google Health yet` | Open `https://YOUR-APP/auth` and sign in. |
+| `Permission denied` on GPS routes | Sign in again at `/auth` so Google grants the new `location` permission. |
 | `Google rejected the saved sign-in` | Sign in again at `/auth`. If it keeps happening weekly, publish the Google app (step 2.4). |
 | `Google OAuth client is not configured` | Add `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in Vercel and redeploy. |
 | `redirect_uri_mismatch` on Google's page | The redirect URI must be exactly `https://YOUR-APP/oauth2callback`. If you use a custom domain, also set `PUBLIC_BASE_URL=https://your-domain`. |
@@ -89,7 +91,7 @@ To disconnect, remove the app at <https://myaccount.google.com/connections>. To 
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | yes | Your Google OAuth web client |
 | Blob store (`BLOB_READ_WRITE_TOKEN`) | yes on Vercel | Added automatically when you connect a private Blob store |
 | `PUBLIC_BASE_URL` | custom domains only | Public `https://` address used for the Google redirect |
-| `GOOGLE_HEALTH_SCOPES` | no | Extra scopes, e.g. `activity,metrics,sleep,profile,settings,ecg,irn` |
+| `GOOGLE_HEALTH_SCOPES` | no | Scopes to request; default `activity,metrics,sleep,profile,settings,location`. Add `ecg,irn` for ECG data |
 | `GOOGLE_REFRESH_TOKEN` | no | Use a refresh token from elsewhere instead of signing in at `/auth` |
 
 ## Running on your own computer (optional)

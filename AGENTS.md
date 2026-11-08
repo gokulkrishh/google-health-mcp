@@ -7,7 +7,8 @@ Read-only MCP server that exposes one person's Fitbit / Pixel Watch data from th
 | File | Owns |
 |---|---|
 | `src/dataTypes.ts` | The data type registry (`DATA_TYPES`): id, time kind, list/rollup support, scope. Builds list filters and rollup request bodies and enforces API limits. Everything else derives from it. |
-| `src/tools.ts` | The 7 MCP tools. Tool enums come from the registry. |
+| `src/tools.ts` | The 8 MCP tools. Tool enums come from the registry. |
+| `src/tcx.ts` | Parses a workout's TCX export into a route summary and thinned GPS points. |
 | `src/api.ts` | REST client. Retries once on 401 with a forced token refresh, maps Google errors to plain messages. |
 | `src/auth.ts` | Google OAuth (PKCE), the refresh token store, and the terminal sign-in (`auth` command). |
 | `src/http.ts` | Stateless Streamable HTTP handler: `/mcp`, `/healthz`, and browser sign-in at `/auth` and `/oauth2callback`. Shared by the CLI and Vercel. |
@@ -29,6 +30,7 @@ Read-only MCP server that exposes one person's Fitbit / Pixel Watch data from th
 - Filter fields use the snake_case data type id (`daily_heart_rate_variability.date`). Sleep filters on `civil_end_time`. ECG only supports `start_time >=`.
 - Rollup range is at most 14 days for `heart-rate`, `active-minutes`, `total-calories` and `calories-in-heart-rate-zone`, and 90 days otherwise. Sleep and exercise list pages max out at 25.
 - There is no `nutrition.readonly` scope, so food and water data are not readable.
+- GPS routes come from `exportExerciseTcx` with `?alt=media` (raw TCX) and need both `activity_and_fitness` and `location` scopes.
 
 ## Working on it
 
