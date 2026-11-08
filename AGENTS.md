@@ -34,7 +34,7 @@ Read-only MCP server that exposes one person's Fitbit / Pixel Watch data from th
 
 ## Working on it
 
-- `npm test` runs `tsc` and the unit tests in `src/dataTypes.test.ts`. Run it before every commit.
+- `npm test` runs `tsc` and the unit tests in `src/*.test.ts`. Run it before every commit.
 - To check HTTP behaviour, run `MCP_HTTP_TOKEN=$(openssl rand -hex 32) node dist/index.js serve --http` and POST JSON-RPC (`tools/list`) to `http://127.0.0.1:8787/mcp` with the Bearer header.
 - Pushing to `main` deploys production on Vercel through the GitHub integration. Treat every push as a production deploy.
 - Secrets live in Vercel environment variables and the Blob store. Never commit `.env*`, `credentials.json` or `token.json`.

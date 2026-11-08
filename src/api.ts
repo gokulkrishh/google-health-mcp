@@ -23,7 +23,7 @@ function explain(status: number, body: GoogleError): string {
     return "Your Google account has no Google Health profile yet. Sign in to the Google Health (Fitbit) app with this Google account, finish the profile or Fitbit migration, then try again.";
   }
   if (status === 403) {
-    return `Permission denied: ${err?.message ?? "missing scope"}. This data needs a permission that was not granted at sign-in (for example GPS routes, ECG or IRN). ${signInHint()}`;
+    return `Permission denied: ${(err?.message ?? "missing scope").replace(/\.+$/, "")}. This data needs a permission that was not granted at sign-in (for example GPS routes, ECG or IRN). ${signInHint()}`;
   }
   return `Google Health API ${status} ${err?.status ?? ""}: ${err?.message ?? "request failed"}`.replace(/\s+/g, " ");
 }
