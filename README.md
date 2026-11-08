@@ -66,6 +66,13 @@ Menu names in these apps change often; look for "connectors" or "MCP servers". P
 | `list_paired_devices` | Your devices, battery level and last sync. |
 | `list_data_types` | All 35 readable data types. |
 
+### Make the AI smarter about your data (optional skill)
+
+[`skills/google-health-insights`](skills/google-health-insights/SKILL.md) teaches the AI which tool to use for each question, how to read Google's raw fields (millimetres, grams, `"17640s"`), how to compare against your own baseline, and when to suggest seeing a doctor.
+
+- **Claude Code:** `cp -r skills/google-health-insights ~/.claude/skills/` (it is already active when you work inside this repo).
+- **Claude apps:** zip the `google-health-insights` folder and upload it as a custom skill in claude.ai settings.
+
 Not available: food and water logs. Google Health API v4 has no read permission for nutrition yet.
 
 ## Troubleshooting
