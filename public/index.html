@@ -370,7 +370,8 @@ Authorization: <span class="t">Bearer YOUR_TOKEN</span>
       dialog.querySelector("input")?.focus();
     });
   }
-  if (location.hash === "#connect-app") document.getElementById("connect-dialog")?.showModal?.();
+  const hashDialog = { "#connect-app": "connect-dialog", "#sign-in": "signin-dialog" }[location.hash];
+  if (hashDialog) document.getElementById(hashDialog)?.showModal?.();
   for (const dialog of document.querySelectorAll("dialog")) {
     dialog.addEventListener("click", (event) => {
       if (event.target === dialog || event.target.closest("[data-close]")) dialog.close();

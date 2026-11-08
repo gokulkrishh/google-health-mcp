@@ -87,7 +87,7 @@ export function createMcpHttpHandler(rawToken = process.env.MCP_HTTP_TOKEN ?? ""
 
   async function handleSignInCallback(req: IncomingMessage, res: ServerResponse, url: URL): Promise<void> {
     const clear = { "set-cookie": signInCookie("", 0) };
-    const restart = '<p><a href="/auth">Start sign-in again</a>.</p>';
+    const restart = '<a class="button" href="/#sign-in">Start sign-in again</a>';
     let saved: { state?: unknown; verifier?: unknown } = {};
     try {
       saved = JSON.parse(Buffer.from(readCookie(req, SIGN_IN_COOKIE) ?? "", "base64url").toString("utf8"));
