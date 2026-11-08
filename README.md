@@ -46,7 +46,32 @@ Your app's home page shows all of this with your address filled in.
 
 Food and water logs are not available: the Google Health API has no read permission for them yet.
 
-**Better answers (optional):** the [`google-health-insights`](skills/google-health-insights/SKILL.md) skill teaches the AI how to read the data and compare it with your own baseline. For Claude Code run `cp -r skills/google-health-insights ~/.claude/skills/`; for the Claude apps, zip the folder and upload it as a custom skill.
+## Skill: better answers (optional)
+
+The [`google-health-insights`](skills/google-health-insights/SKILL.md) skill teaches the AI which tool to use for each question, how to read the raw numbers, how to compare them with your own baseline, and when to suggest seeing a doctor. It's a single file, `SKILL.md`.
+
+**Let your AI install it.** Paste this into Claude Code or any coding agent:
+
+```text
+Install the google-health-insights skill from https://github.com/gokulkrishh/google-health-mcp.
+Download https://raw.githubusercontent.com/gokulkrishh/google-health-mcp/main/skills/google-health-insights/SKILL.md
+and save it as ~/.claude/skills/google-health-insights/SKILL.md, creating the folder if needed.
+Then confirm the file starts with "name: google-health-insights".
+```
+
+**Or install it yourself:**
+
+- **Claude Code:**
+
+  ```bash
+  mkdir -p ~/.claude/skills/google-health-insights && curl -fsSL https://raw.githubusercontent.com/gokulkrishh/google-health-mcp/main/skills/google-health-insights/SKILL.md -o ~/.claude/skills/google-health-insights/SKILL.md
+  ```
+
+  Start a new session to load it. It's already active when you work inside this repo.
+- **Claude apps (web, desktop, phone):** download [`SKILL.md`](https://raw.githubusercontent.com/gokulkrishh/google-health-mcp/main/skills/google-health-insights/SKILL.md), put it in a folder named `google-health-insights`, zip that folder, and upload the zip as a custom skill in claude.ai settings.
+- **Other AI apps:** any app that supports Agent Skills can use the same folder. For apps without skills, paste the contents of `SKILL.md` into the app's custom instructions or project instructions.
+
+To update the skill later, run the same command or prompt again.
 
 ## Troubleshooting
 
