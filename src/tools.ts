@@ -16,7 +16,7 @@ import {
   maxRollupDays,
   requireList,
 } from "./dataTypes.js";
-import { parseExerciseId, summarizeRoute } from "./tcx.js";
+import { DEFAULT_PRIVACY_RADIUS_M, parseExerciseId, summarizeRoute } from "./tcx.js";
 
 const MAX_OUTPUT_CHARS = 80_000;
 const MAX_ROLLUP_PAGES = 10;
@@ -189,15 +189,21 @@ export function createServer(client = new HealthClient()): McpServer {
       }),
   );
 
+  const routePrivacyRadius = () => {
+    const raw = process.env.ROUTE_PRIVACY_METERS?.trim();
+    const configured = raw ? Number(raw) : Number.NaN;
+    return Number.isFinite(configured) && configured >= 0 ? configured : DEFAULT_PRIVACY_RADIUS_M;
+  };
+
   server.registerTool(
     "get_exercise_route",
     {
       title: "Workout GPS route",
       description:
-        "GPS route of one exercise session: distance, duration, elevation gain, heart rate, map bounds and a thinned list of track points (time, lat, lon, altitude, heart rate). Get the exercise id from get_data_points with dataType 'exercise'. Workouts recorded without GPS have no route.",
+        "Route of one GPS workout. By default returns only a summary with no coordinates: distance, duration, elevation gain and heart rate. Set maxPoints only when the user wants to see the route on a map; points near the start and finish are always hidden for privacy, because they usually reveal where the user lives. Get the exercise id from get_data_points with dataType 'exercise'. Workouts recorded without GPS have no route.",
       inputSchema: {
         exercise: z.string().describe("Exercise id, or the full data point name from get_data_points, e.g. users/123/dataTypes/exercise/dataPoints/456."),
-        maxPoints: z.number().int().min(0).max(1000).optional().describe("Most track points to return. Default 200; 0 returns only the summary."),
+        maxPoints: z.number().int().min(0).max(1000).optional().describe("Most track points (time, lat, lon, altitude, heart rate) to return, for drawing the route. Default 0: summary only, no coordinates. Use about 200 for a map."),
       },
       annotations: READ_ONLY,
     },
@@ -205,7 +211,7 @@ export function createServer(client = new HealthClient()): McpServer {
       run(async () => {
         const id = parseExerciseId(exercise);
         if (!id) throw new InputError("exercise must be an exercise id or a name like users/123/dataTypes/exercise/dataPoints/456.");
-        const route = summarizeRoute(await client.exerciseTcx(id), maxPoints ?? 200);
+        const route = summarizeRoute(await client.exerciseTcx(id), { maxPoints: maxPoints ?? 0, privacyRadiusM: routePrivacyRadius() });
         return route.gpsPointCount ? { exercise: id, ...route } : { exercise: id, ...route, note: "This workout has no GPS data." };
       }),
   );

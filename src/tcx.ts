@@ -15,10 +15,20 @@ export interface RouteSummary {
   distanceKm?: number;
   elevationGainM?: number;
   heartRate?: { avg: number; max: number };
-  bounds?: { north: number; south: number; east: number; west: number };
   gpsPointCount: number;
+  privacy?: { hiddenRadiusM: number; hiddenPoints: number };
+  bounds?: { north: number; south: number; east: number; west: number };
   points: RoutePoint[];
 }
+
+export interface RouteOptions {
+  /** Most track points to return; 0 returns only the summary, with no coordinates at all. */
+  maxPoints?: number;
+  /** Track points within this many metres of the start or finish are never returned. */
+  privacyRadiusM?: number;
+}
+
+export const DEFAULT_PRIVACY_RADIUS_M = 500;
 
 const EXERCISE_NAME = /^users\/[^/]+\/dataTypes\/exercise\/dataPoints\/([A-Za-z0-9_-]+)$/;
 const EXERCISE_ID = /^[A-Za-z0-9_-]+$/;
@@ -79,7 +89,7 @@ function sample<T>(items: T[], max: number): T[] {
 
 const round = (n: number, places: number) => Math.round(n * 10 ** places) / 10 ** places;
 
-export function summarizeRoute(xml: string, maxPoints = 200): RouteSummary {
+export function summarizeRoute(xml: string, { maxPoints = 0, privacyRadiusM = DEFAULT_PRIVACY_RADIUS_M }: RouteOptions = {}): RouteSummary {
   const { sport, points } = parseTcxTrackpoints(xml);
   if (points.length === 0) return { sport, gpsPointCount: 0, points: [] };
 
@@ -95,12 +105,10 @@ export function summarizeRoute(xml: string, maxPoints = 200): RouteSummary {
     if (prev !== undefined && cur !== undefined && cur > prev) elevationGain += cur - prev;
   }
   const rates = points.map((p) => p.heartRate).filter((v): v is number => v !== undefined);
-  const lats = points.map((p) => p.lat);
-  const lons = points.map((p) => p.lon);
   const start = Date.parse(first.time);
   const end = Date.parse(last.time);
 
-  return {
+  const summary: RouteSummary = {
     sport,
     startTime: first.time,
     endTime: last.time,
@@ -108,8 +116,18 @@ export function summarizeRoute(xml: string, maxPoints = 200): RouteSummary {
     distanceKm: round(distanceM / 1000, 2),
     elevationGainM: points.some((p) => p.altitudeM !== undefined) ? Math.round(elevationGain) : undefined,
     heartRate: rates.length ? { avg: Math.round(rates.reduce((a, b) => a + b, 0) / rates.length), max: Math.max(...rates) } : undefined,
-    bounds: { north: round(Math.max(...lats), 5), south: round(Math.min(...lats), 5), east: round(Math.max(...lons), 5), west: round(Math.min(...lons), 5) },
     gpsPointCount: points.length,
-    points: sample(points, maxPoints).map((p) => ({ ...p, lat: round(p.lat, 5), lon: round(p.lon, 5) })),
+    points: [],
   };
+  if (maxPoints <= 0) return summary;
+
+  const visible = privacyRadiusM > 0 ? points.filter((p) => haversineM(p, first) >= privacyRadiusM && haversineM(p, last) >= privacyRadiusM) : points;
+  if (privacyRadiusM > 0) summary.privacy = { hiddenRadiusM: privacyRadiusM, hiddenPoints: points.length - visible.length };
+  if (visible.length === 0) return summary;
+
+  const lats = visible.map((p) => p.lat);
+  const lons = visible.map((p) => p.lon);
+  summary.bounds = { north: round(Math.max(...lats), 5), south: round(Math.min(...lats), 5), east: round(Math.max(...lons), 5), west: round(Math.min(...lons), 5) };
+  summary.points = sample(visible, maxPoints).map((p) => ({ ...p, lat: round(p.lat, 5), lon: round(p.lon, 5) }));
+  return summary;
 }

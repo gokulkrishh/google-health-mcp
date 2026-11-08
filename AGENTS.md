@@ -37,6 +37,7 @@ Read-only MCP server that exposes one person's Fitbit / Pixel Watch data from th
 - Rollup range is at most 14 days for `heart-rate`, `active-minutes`, `total-calories` and `calories-in-heart-rate-zone`, and 90 days otherwise. Sleep and exercise list pages max out at 25.
 - There is no `nutrition.readonly` scope, so food and water data are not readable.
 - GPS routes come from `exportExerciseTcx` with `?alt=media` (raw TCX) and need both `activity_and_fitness` and `location` scopes.
+- `get_exercise_route` returns no coordinates unless `maxPoints` is set, and never returns points or bounds within `ROUTE_PRIVACY_METERS` (default 500) of the start or finish. Summary stats still use the full track. Keep both guarantees.
 
 ## Working on it
 

@@ -30,7 +30,8 @@ If the google-health tools (`get_daily_summary` and friends) are not available i
 | Trends: "steps this month", "is my weight going down" | `get_daily_rollup` (`windowDays: 7` for weekly) |
 | Within a day: "heart rate during my run", "steps per hour" | `get_rollup` with `windowMinutes` |
 | Sleep detail, resting HR, HRV, SpO2, breathing rate, VO2 max, workouts, weight entries | `get_data_points` with a date range |
-| "Map my run", pace, elevation | `get_data_points` (`exercise`) for the id, then `get_exercise_route` |
+| Pace, elevation of a GPS workout | `get_data_points` (`exercise`) for the id, then `get_exercise_route` (summary only, no coordinates) |
+| "Map my run" | `get_exercise_route` with `maxPoints: 200`, only when the user asks to see the route |
 | Units, goals, time zone, age | `get_user_info` |
 | Battery, last sync, "is my tracker syncing?" | `list_paired_devices` |
 
@@ -100,6 +101,7 @@ Data quality to check before concluding:
 - Never diagnose or prescribe. Use "may", "could", "worth checking".
 - Suggest seeing a doctor promptly for: resting HR persistently above 100 or below 40 with symptoms, SpO2 regularly below 90 %, an irregular rhythm notification, chest pain, fainting or breathlessness. For emergencies, advise local emergency services.
 - Treat the data as private. Don't repeat device MAC addresses, user ids or exercise ids unless asked.
+- GPS points reveal where someone lives and trains. Fetch them only when the user asks for a map, never quote raw coordinates, and don't guess locations from them. Points near the start and finish are already hidden by the server; don't try to reconstruct them.
 
 ## Ready-made workflows
 
@@ -107,5 +109,5 @@ Data quality to check before concluding:
 - **Weekly review:** `get_daily_rollup` for steps, distance and active-zone-minutes (7 days), plus `get_data_points` for sleep, resting HR and HRV over the same range → table, averages, best and worst day, one focus for next week.
 - **Sleep deep-dive:** `get_data_points` sleep for 7 to 14 days → average time asleep, stage mix, time to fall asleep, consistency of bed and wake times.
 - **Recovery check:** resting HR, HRV, sleep and skin temperature against the 14-day baseline → "ready to push", "take it easier" or "rest".
-- **Workout review:** latest `exercise` → duration, distance, pace, average HR, AZM; if `exerciseMetadata.hasGps`, add `get_exercise_route` with `maxPoints: 0` for the summary.
+- **Workout review:** latest `exercise` → duration, distance, pace, average HR, AZM; if `exerciseMetadata.hasGps`, add `get_exercise_route` (its default is the summary, no coordinates).
 - **Goal progress:** `get_user_info` for goals, then the matching rollup for this week or month.

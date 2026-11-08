@@ -11,8 +11,50 @@ const TCX = `<?xml version="1.0" encoding="UTF-8"?>
 <Trackpoint><Time>2026-11-08T00:32:00Z</Time><Position><LatitudeDegrees>12.9736000</LatitudeDegrees><LongitudeDegrees>77.5966000</LongitudeDegrees></Position><AltitudeMeters>903</AltitudeMeters><DistanceMeters>301</DistanceMeters><HeartRateBpm><Value>151</Value></HeartRateBpm></Trackpoint>
 </Track></Lap></Activity></Activities></TrainingCenterDatabase>`;
 
+const trackpoint = (i: number, lat: number) =>
+  `<Trackpoint><Time>${new Date(Date.UTC(2026, 10, 8, 1, 0, i * 30)).toISOString()}</Time><Position><LatitudeDegrees>${lat.toFixed(6)}</LatitudeDegrees><LongitudeDegrees>77.5946</LongitudeDegrees></Position></Trackpoint>`;
+
+/** An out-and-back run: 20 steps of about 111 m north from home, then back. */
+const OUT_AND_BACK = `<TrainingCenterDatabase><Activities><Activity Sport="Running"><Lap><Track>${Array.from({ length: 41 }, (_, i) =>
+  trackpoint(i, 12.9716 + 0.001 * (i <= 20 ? i : 40 - i)),
+).join("")}</Track></Lap></Activity></Activities></TrainingCenterDatabase>`;
+
+const HOME = { lat: 12.9716, lon: 77.5946 };
+const metresFromHome = (p: { lat: number; lon: number }) => {
+  const rad = Math.PI / 180;
+  const h = Math.sin(((p.lat - HOME.lat) * rad) / 2) ** 2 + Math.cos(HOME.lat * rad) * Math.cos(p.lat * rad) * Math.sin(((p.lon - HOME.lon) * rad) / 2) ** 2;
+  return 2 * 6_371_000 * Math.asin(Math.sqrt(h));
+};
+
+test("by default a route is a summary with no coordinates at all", () => {
+  const route = summarizeRoute(OUT_AND_BACK);
+  assert.equal(route.gpsPointCount, 41);
+  assert.equal(route.distanceKm, 4.45);
+  assert.equal(route.durationSeconds, 1200);
+  assert.deepEqual(route.points, []);
+  assert.equal(route.bounds, undefined);
+  assert.doesNotMatch(JSON.stringify(route), /12\.97|77\.59/);
+});
+
+test("track points near the start and finish are never returned", () => {
+  const route = summarizeRoute(OUT_AND_BACK, { maxPoints: 1000 });
+  assert.ok(route.points.length > 0);
+  for (const p of route.points) assert.ok(metresFromHome(p) >= 500, `point ${p.lat},${p.lon} is ${Math.round(metresFromHome(p))} m from home`);
+  assert.ok(route.bounds && metresFromHome({ lat: route.bounds.south, lon: HOME.lon }) >= 500, "the map bounds do not reach home either");
+  assert.equal(route.privacy?.hiddenRadiusM, 500);
+  assert.equal(route.distanceKm, 4.45, "distance still counts the hidden part");
+});
+
+test("a route that never leaves the privacy zone returns no points", () => {
+  const route = summarizeRoute(TCX, { maxPoints: 200 });
+  assert.equal(route.gpsPointCount, 3);
+  assert.deepEqual(route.points, []);
+  assert.equal(route.bounds, undefined);
+  assert.equal(route.privacy?.hiddenPoints, 3);
+});
+
 test("a TCX workout becomes a route summary with GPS points only", () => {
-  const route = summarizeRoute(TCX);
+  const route = summarizeRoute(TCX, { maxPoints: 200, privacyRadiusM: 0 });
   assert.equal(route.sport, "Running");
   assert.equal(route.gpsPointCount, 3);
   assert.equal(route.durationSeconds, 120);
@@ -24,11 +66,11 @@ test("a TCX workout becomes a route summary with GPS points only", () => {
 });
 
 test("maxPoints thins the track but keeps the start and finish", () => {
-  const route = summarizeRoute(TCX, 2);
+  const route = summarizeRoute(TCX, { maxPoints: 2, privacyRadiusM: 0 });
   assert.equal(route.points.length, 2);
   assert.equal(route.points[0]?.time, "2026-11-08T00:30:00Z");
   assert.equal(route.points[1]?.time, "2026-11-08T00:32:00Z");
-  assert.equal(summarizeRoute(TCX, 0).points.length, 0);
+  assert.equal(summarizeRoute(TCX, { maxPoints: 0, privacyRadiusM: 0 }).points.length, 0);
 });
 
 test("a workout without GPS has an empty route", () => {

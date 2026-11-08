@@ -39,7 +39,7 @@ Apps without sign-in support can still send the token directly: header `Authoriz
 | `get_daily_rollup` | Trends per day or week, up to 90 days |
 | `get_rollup` | Hour-by-hour values, such as heart rate during a run |
 | `get_data_points` | Raw records: sleep stages, workouts, weight, SpO2, HRV, ECG |
-| `get_exercise_route` | A workout's GPS route with distance, elevation and heart rate |
+| `get_exercise_route` | A GPS workout's distance, elevation and heart rate. Map points only on request, with 500 m around the start and finish hidden |
 | `get_user_info` | Profile, units, time zone and goals |
 | `list_paired_devices` | Devices, battery and last sync |
 | `list_data_types` | Every readable data type |
@@ -101,6 +101,7 @@ To disconnect Google, remove the app at <https://myaccount.google.com/connection
 | `PUBLIC_BASE_URL` | Only for custom domains: your public `https://` address. |
 | `GOOGLE_HEALTH_SCOPES` | Scopes to request. Default `activity,metrics,sleep,profile,settings,location,ecg`; add `irn` for irregular rhythm alerts. |
 | `GOOGLE_REFRESH_TOKEN` | Use a refresh token from elsewhere instead of signing in at `/auth`. |
+| `ROUTE_PRIVACY_METERS` | GPS points this close to a workout's start or finish are never sent to the AI. Default `500`; `0` turns it off. |
 
 </details>
 
