@@ -14,6 +14,7 @@ Read-only MCP server that exposes one person's Fitbit / Pixel Watch data from th
 | `src/http.ts` | Stateless Streamable HTTP handler: `/mcp`, `/healthz`, and browser sign-in at `/auth` and `/oauth2callback`. Shared by the CLI and Vercel. |
 | `src/index.ts` | CLI: `auth`, `whoami`, `serve` (stdio), `serve --http`. |
 | `skills/google-health-insights/` | Skill that teaches AI clients to use the tools and interpret the data. `.claude/skills/` links to it. Keep field names in sync with the API. |
+| `grok-bot/TEMPLATE.md` | Copy-paste setup for a Grok Bot (connector, instructions, skills, routines). Keep tool names in sync. |
 | `api/mcp.js`, `vercel.json`, `public/` | Vercel function entry (imports `dist/`), rewrites, static landing page. |
 
 ## Rules that keep it safe

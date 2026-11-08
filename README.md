@@ -73,6 +73,10 @@ Then confirm the file starts with "name: google-health-insights".
 
 To update the skill later, run the same command or prompt again.
 
+## Grok Bot template
+
+[`grok-bot/TEMPLATE.md`](grok-bot/TEMPLATE.md) sets up a **Health Coach** Grok Bot in a few copy-pastes: the connector, its standing instructions, three skills (`/daily-health-brief`, `/weekly-health-review`, `/recovery-check`), and routines for a morning brief and a Sunday review.
+
 ## Troubleshooting
 
 | You see | Fix |
