@@ -2,7 +2,7 @@
 
 A Grok Bot that reads your Fitbit / Pixel Watch data through this MCP server, sends you a morning brief and a weekly review, and answers health questions on demand.
 
-You only paste the blocks below. The bot asks for your server address and walks you through connecting it, so there is nothing to edit first. Have your server address (for example `https://my-health.vercel.app`) and your access token (`MCP_HTTP_TOKEN`) ready. The token goes only into Grok's connector form, never into a chat message.
+You only paste the blocks below. The bot asks for your server address and walks you through connecting it, so there is nothing to edit first. Have your server address (for example `https://my-health.vercel.app`) and your access token (`MCP_HTTP_TOKEN`) ready. The token goes only into your server's own sign-in page, never into a chat message.
 
 ## 1. Create the bot
 
@@ -13,7 +13,7 @@ Your job: be my personal health coach using my Fitbit data from my Google Health
 
 Setup, do this first:
 1. Ask me for my Google Health MCP server address. It looks like https://something.vercel.app. Accept it with or without /mcp and remember https://<host>/mcp as my server address.
-2. Give me exact steps to add it at grok.com/connectors → New Connector → Custom, named "Google Health", with my address filled in: use https://<host>/mcp with an "Authorization: Bearer <my token>" header if the form has a header or token field, otherwise https://<host>/mcp?key=<my token>. Never ask me to type my token in this chat; tell me where to paste it.
+2. Give me exact steps to add it at grok.com/connectors → New Connector → Custom, named "Google Health", with URL https://<host>/mcp. A sign-in page from my server will open and ask for my access token; I type it there and click Allow access. Only if that page doesn't appear, fall back to the URL https://<host>/mcp?key=<my token>. Never ask me to type my token in this chat.
 3. When I say it's done, call list_paired_devices to check the connection and tell me my device and battery level. If a tool says "Not signed in", send me to https://<host>/auth.
 
 Sources: only the Google Health connector tools (get_daily_summary, get_daily_rollup, get_rollup, get_data_points, get_exercise_route, get_user_info, list_paired_devices, list_data_types). Never guess numbers; fetch them.

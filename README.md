@@ -22,14 +22,14 @@ Open `https://YOUR-APP.vercel.app/auth`. The first time, it shows a short checkl
 
 ### 3. Connect your AI app
 
-Every app needs your server address, `https://YOUR-APP.vercel.app/mcp`, and your token:
+Add your server address, `https://YOUR-APP.vercel.app/mcp`, as a connector and click **Connect**. A page on your own server opens and asks for your `MCP_HTTP_TOKEN`; type it there and click **Allow access**. The token never goes into a chat, a URL or the app's settings.
 
-- **Claude** (web, desktop, phone): Settings → Connectors → Add custom connector. Paste the address, choose **No sign in**, and add the request header `Authorization: Bearer YOUR_TOKEN`.
-- **ChatGPT**: turn on Developer mode under Settings → Apps & Connectors, then add a connector with **No authentication** and the URL `https://YOUR-APP.vercel.app/mcp?key=YOUR_TOKEN`.
-- **Claude Code**: `claude mcp add --transport http -s user google-health https://YOUR-APP.vercel.app/mcp --header "Authorization: Bearer YOUR_TOKEN"`
-- **Grok and other apps**: same address, with the header if the app supports one, otherwise the `?key=` URL.
+- **Claude** (web, desktop, phone): Settings → Connectors → Add custom connector → paste the address → Connect.
+- **ChatGPT**: turn on Developer mode under Settings → Apps & Connectors, create a connector with the address and authentication **OAuth**.
+- **Grok**: grok.com/connectors → New Connector → Custom → paste the address → finish the sign-in that opens.
+- **Claude Code**: `claude mcp add --transport http -s user google-health https://YOUR-APP.vercel.app/mcp`, then run `/mcp` in Claude Code and choose **Authenticate**.
 
-Your app's home page shows all of this with your address filled in.
+Apps without sign-in support can still send the token directly: header `Authorization: Bearer YOUR_TOKEN`, or the URL `https://YOUR-APP.vercel.app/mcp?key=YOUR_TOKEN` (the parameter is `key`). Your app's home page shows all of this with your address filled in.
 
 ## What it can read
 
@@ -85,7 +85,7 @@ To update the skill later, run the same command or prompt again.
 | `Google rejected the saved sign-in` | Sign in again at `/auth`. If it happens weekly, click **Publish app** in Google Auth Platform → Audience. |
 | `redirect_uri_mismatch` | The Google client's redirect URI must exactly match the one shown on `/auth`. For custom domains, also set `PUBLIC_BASE_URL`. |
 | `has no Google Health profile yet` | Open the Fitbit / Google Health phone app with the same Google account and finish setup. |
-| 401 in your AI app | The token in the app doesn't match `MCP_HTTP_TOKEN`. |
+| 401 in your AI app | Disconnect and reconnect it, or check the token you typed matches `MCP_HTTP_TOKEN`. Changing `MCP_HTTP_TOKEN` signs out every connected app. |
 | No data for today | Open the Fitbit app to sync. Sleep and resting heart rate appear after a night's wear. |
 
 To disconnect Google, remove the app at <https://myaccount.google.com/connections>. To lock out your AI apps, change `MCP_HTTP_TOKEN` and redeploy.

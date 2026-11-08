@@ -12,6 +12,8 @@ Read-only MCP server that exposes one person's Fitbit / Pixel Watch data from th
 | `src/api.ts` | REST client. Retries once on 401 with a forced token refresh, maps Google errors to plain messages. |
 | `src/auth.ts` | Google OAuth (PKCE), the refresh token store, and the terminal sign-in (`auth` command). |
 | `src/http.ts` | Stateless Streamable HTTP handler: `/mcp`, `/healthz`, and browser sign-in at `/auth` and `/oauth2callback`. Shared by the CLI and Vercel. |
+| `src/oauth.ts` | Stateless OAuth 2.1 server for MCP clients: metadata, `/register`, `/authorize` (owner types `MCP_HTTP_TOKEN`), `/token`. |
+| `src/web.ts` | HTML page, JSON and request-body helpers. |
 | `src/index.ts` | CLI: `auth`, `whoami`, `serve` (stdio), `serve --http`. |
 | `skills/google-health-insights/` | Skill that teaches AI clients to use the tools and interpret the data. `.claude/skills/` links to it. Keep field names in sync with the API. |
 | `grok-bot/TEMPLATE.md` | Copy-paste setup for a Grok Bot (connector, instructions, skills, routines). Keep tool names in sync. |
@@ -21,7 +23,9 @@ Read-only MCP server that exposes one person's Fitbit / Pixel Watch data from th
 
 - Only request `googlehealth.*.readonly` scopes. Never add write tools.
 - Never log, return or render a refresh token, access token or `MCP_HTTP_TOKEN`. Escape anything echoed into HTML.
-- `/mcp` requires `MCP_HTTP_TOKEN` as a Bearer header or `?key=`, compared with `timingSafeEqual` on SHA-256 digests. `/auth` takes it from a POST form, never the URL.
+- `/mcp` accepts an OAuth access token from `oauth.ts`, or `MCP_HTTP_TOKEN` as a Bearer header or `?key=`, compared with `timingSafeEqual` on SHA-256 digests. `/auth` and `/authorize` take the token from a POST form, never the URL.
+- OAuth client ids, codes and tokens are HMAC-signed claims keyed from `MCP_HTTP_TOKEN`; there is no token store, and rotating `MCP_HTTP_TOKEN` revokes every client. PKCE S256 is mandatory; redirect URIs must be https or loopback http.
+- New HTTP paths must also be added to the `rewrites` in `vercel.json`, or Vercel serves 404.
 - Browser sign-in keeps the PKCE verifier and state in the `__Host-gh_signin` cookie (HttpOnly, Secure, SameSite=Lax, 10 min). The redirect URI comes from `PUBLIC_BASE_URL` or `VERCEL_PROJECT_PRODUCTION_URL`, never the Host header.
 - Refresh token precedence: private Vercel Blob (`google-health-mcp/sign-in.json`), then `GOOGLE_REFRESH_TOKEN`, then `~/.config/google-health-mcp/token.json`. It is re-read on every refresh, so a new sign-in applies without a redeploy.
 - Write to stderr only in stdio mode; stdout is the MCP channel.

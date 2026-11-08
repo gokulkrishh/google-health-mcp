@@ -229,7 +229,7 @@
         <div class="step">
           <span class="step-n">01</span>
           <h3>Copy your server address</h3>
-          <p>Paste it into your AI app with your access token (<span class="mono">MCP_HTTP_TOKEN</span>). Treat the token like a password.</p>
+          <p>Paste it into your AI app and click Connect. You'll type your access token (<span class="mono">MCP_HTTP_TOKEN</span>) on your server's own page.</p>
           <div class="url-box"><code id="step-url">/mcp</code><button class="btn btn-primary" type="button" data-copy="step-url">Copy</button></div>
         </div>
         <div class="step">
@@ -245,26 +245,26 @@
   <section id="connect">
     <div class="wrap">
       <h2>Add it to any AI app</h2>
-      <p class="section-lede">Every app that supports MCP needs the same two things: your server address and your access token. Only the menu changes.</p>
+      <p class="section-lede">Paste your server address, click Connect, and type your access token on the page that opens. That's it.</p>
       <div class="panel">
         <div class="prose">
-          <p>Add a custom connector (some apps call it an MCP server) and paste your server address. If the app lets you add a request header, set <code>Authorization</code> to <code>Bearer YOUR_TOKEN</code> and choose no sign-in. If it only takes a URL, as ChatGPT does, put the token at the end with <code>?key=YOUR_TOKEN</code>.</p>
-          <p>In Claude it's under <b>Settings → Connectors</b>, and it then works in the desktop and phone apps too. In ChatGPT, turn on Developer mode under <b>Settings → Apps &amp; Connectors</b>. In Grok, use <b>grok.com/connectors</b>. In Claude Code, run the command shown.</p>
-          <p>Replace <code>YOUR_TOKEN</code> with your access token, and never paste the token into a chat.</p>
+          <p>Add a custom connector (some apps call it an MCP server) with your server address. The app opens a sign-in page on your own server, which asks for your access token (<code>MCP_HTTP_TOKEN</code>). Type it there and click <b>Allow access</b>. The token never goes into a chat, a URL or the app's settings.</p>
+          <p>In Claude it's <b>Settings → Connectors → Add custom connector</b>, and it then works in the desktop and phone apps too. In ChatGPT, turn on Developer mode under <b>Settings → Apps &amp; Connectors</b> and choose <b>OAuth</b>. In Grok, use <b>grok.com/connectors</b>. In Claude Code, run the command shown, then <code>/mcp</code> → Authenticate.</p>
+          <p>Apps without sign-in support can send the token as a header or with <code>?key=</code> instead.</p>
         </div>
         <div class="window code-window">
           <div class="titlebar"><span class="lights"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span>Connection details</div>
-          <pre><span class="k">Server address</span>
+          <pre><span class="k">Server address (all you need)</span>
 <span class="s" data-fill>/mcp</span>
 
-<span class="k">Header, where the app allows it</span>
+<span class="k">Claude Code</span>
+<span id="cc-cmd">claude mcp add --transport http -s user google-health <span class="s" data-fill>/mcp</span></span>
+
+<span class="k">Fallback: header</span>
 Authorization: <span class="t">Bearer YOUR_TOKEN</span>
 
-<span class="k">URL only, for apps without headers</span>
-<span class="s" data-fill>/mcp</span>?key=<span class="t">YOUR_TOKEN</span>
-
-<span class="k">Claude Code</span>
-<span id="cc-cmd">claude mcp add --transport http -s user google-health <span class="s" data-fill>/mcp</span> --header "Authorization: <span class="t">Bearer YOUR_TOKEN</span>"</span></pre>
+<span class="k">Fallback: URL only</span>
+<span class="s" data-fill>/mcp</span>?key=<span class="t">YOUR_TOKEN</span></pre>
           <div class="code-foot"><button class="btn" type="button" data-copy="cc-cmd">Copy Claude Code command</button></div>
         </div>
       </div>

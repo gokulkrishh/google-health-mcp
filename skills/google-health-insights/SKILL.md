@@ -13,12 +13,13 @@ If the google-health tools (`get_daily_summary` and friends) are not available i
 
 1. Ask: "What's your Google Health MCP server address? It looks like `https://something.vercel.app`." Accept it with or without `/mcp` and use `https://<host>/mcp` as the server address from then on. Remember it if you can.
 2. If you can fetch web pages, check `https://<host>/healthz` returns `ok`. If it doesn't, the server isn't deployed yet: point to https://github.com/gokulkrishh/google-health-mcp#setup.
-3. Give connection steps for the app you are running in, with their address already filled in:
-   - Claude: Settings → Connectors → Add custom connector, URL `https://<host>/mcp`, authentication **No sign in**, request header `Authorization: Bearer <token>`.
-   - Claude Code: `claude mcp add --transport http -s user google-health https://<host>/mcp --header "Authorization: Bearer <token>"`
-   - ChatGPT: Developer mode connector, **No authentication**, URL `https://<host>/mcp?key=<token>`.
-   - Grok and others: grok.com/connectors → New Connector → Custom, with the header if the form has one, otherwise the `?key=` URL.
-4. Never ask the user to type their access token (`MCP_HTTP_TOKEN`) into the chat. Tell them where to paste it themselves.
+3. Give connection steps for the app you are running in, with their address already filled in. The server supports sign-in, so the URL alone is enough:
+   - Claude: Settings → Connectors → Add custom connector → `https://<host>/mcp` → Connect.
+   - ChatGPT: Developer mode connector with `https://<host>/mcp` and authentication **OAuth**.
+   - Grok: grok.com/connectors → New Connector → Custom → `https://<host>/mcp`.
+   - Claude Code: `claude mcp add --transport http -s user google-health https://<host>/mcp`, then `/mcp` → Authenticate.
+   A page on their server then asks for their access token (`MCP_HTTP_TOKEN`) and they click **Allow access**. Only if an app has no sign-in support, fall back to the header `Authorization: Bearer <token>` or `https://<host>/mcp?key=<token>`.
+4. Never ask the user to type their access token into the chat. It goes only into their server's sign-in page (or the app's own header field).
 5. If tools return "Not signed in", send them to `https://<host>/auth` to connect their Google account.
 
 ## Pick the right tool
