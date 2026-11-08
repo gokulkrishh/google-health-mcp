@@ -1,45 +1,15 @@
-import { createHash, timingSafeEqual } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { HealthClient } from "./api.js";
 import { completeSignIn, missingSetup, publicBaseUrl, requestedScopeIds, startSignIn } from "./auth.js";
+import { OAuthSigner, createOAuthRoutes } from "./oauth.js";
 import { createServer } from "./tools.js";
+import { escapeHtml, readForm, sameSecret, sendPage } from "./web.js";
 
 export const MIN_TOKEN_LENGTH = 32;
 const MCP_PATHS = new Set(["/mcp", "/api/mcp"]);
 const SIGN_IN_COOKIE = "__Host-gh_signin";
 const SIGN_IN_TTL_SECONDS = 600;
-const MAX_FORM_BYTES = 4096;
-
-function digest(value: string): Buffer {
-  return createHash("sha256").update(value).digest();
-}
-
-function sameSecret(a: string, b: string): boolean {
-  return timingSafeEqual(digest(a), digest(b));
-}
-
-function escapeHtml(value: string): string {
-  return value.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
-}
-
-function sendPage(res: ServerResponse, status: number, title: string, bodyHtml: string, headers: Record<string, string | string[]> = {}): void {
-  res.writeHead(status, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "x-frame-options": "DENY", ...headers });
-  res.end(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex"><title>${escapeHtml(title)}</title>
-<style>body{font:16px/1.5 system-ui,sans-serif;max-width:32rem;margin:4rem auto;padding:0 1rem;color:#222;background:#fff}input,button{font:inherit;padding:.5rem;width:100%;box-sizing:border-box;margin:.25rem 0}code{background:#f2f2f2;padding:.1em .3em;border-radius:4px;overflow-wrap:anywhere}code.pick{user-select:all;cursor:pointer}ol ol{margin:.4rem 0}li{margin:.35rem 0}@media (prefers-color-scheme:dark){body{color:#ddd;background:#111}code{background:#222}}</style>
-</head><body><h1>${escapeHtml(title)}</h1>${bodyHtml}</body></html>`);
-}
-
-async function readForm(req: IncomingMessage): Promise<URLSearchParams> {
-  let size = 0;
-  const chunks: Buffer[] = [];
-  for await (const chunk of req) {
-    size += (chunk as Buffer).length;
-    if (size > MAX_FORM_BYTES) throw new Error("Form too large.");
-    chunks.push(chunk as Buffer);
-  }
-  return new URLSearchParams(Buffer.concat(chunks).toString("utf8"));
-}
 
 function readCookie(req: IncomingMessage, name: string): string | undefined {
   for (const part of (req.headers.cookie ?? "").split(";")) {
@@ -81,13 +51,15 @@ const SIGN_IN_FORM = `<p>Enter your MCP access token (<code>MCP_HTTP_TOKEN</code
 
 /**
  * Stateless Streamable HTTP handler shared by `serve --http` and the Vercel function.
- * MCP clients authenticate with `Authorization: Bearer <MCP_HTTP_TOKEN>` or `?key=<MCP_HTTP_TOKEN>`.
+ * MCP clients authenticate with OAuth (see oauth.ts), `Authorization: Bearer <MCP_HTTP_TOKEN>` or `?key=<MCP_HTTP_TOKEN>`.
  * `/auth` and `/oauth2callback` let the owner sign in to Google from a browser, with no local setup.
  */
 export function createMcpHttpHandler(rawToken = process.env.MCP_HTTP_TOKEN ?? "") {
   const token = rawToken.trim();
   const matches = (candidate: string | null | undefined) => !!candidate?.trim() && sameSecret(candidate.trim(), token);
   const client = new HealthClient();
+  const base = publicBaseUrl();
+  const oauth = base && token.length >= MIN_TOKEN_LENGTH ? createOAuthRoutes(base, token, new OAuthSigner(token)) : undefined;
 
   async function handleSignInStart(req: IncomingMessage, res: ServerResponse): Promise<void> {
     const missing = missingSetup();
@@ -96,7 +68,6 @@ export function createMcpHttpHandler(rawToken = process.env.MCP_HTTP_TOKEN ?? ""
     if (req.method !== "POST") return void res.writeHead(405, { allow: "GET, POST" }).end();
     const form = await readForm(req);
     if (!matches(form.get("key"))) return sendPage(res, 401, "Connect Google Health", `<p>That access token is not right.</p>${SIGN_IN_FORM}`);
-    const base = publicBaseUrl();
     if (!base) return sendPage(res, 500, "Not configured", "<p>Set <code>PUBLIC_BASE_URL</code> to this server's public https origin.</p>");
     const { url, state, verifier } = startSignIn(`${base}/oauth2callback`);
     const cookie = Buffer.from(JSON.stringify({ state, verifier })).toString("base64url");
@@ -119,7 +90,6 @@ export function createMcpHttpHandler(rawToken = process.env.MCP_HTTP_TOKEN ?? ""
     const code = url.searchParams.get("code");
     if (!code) return sendPage(res, 400, "Sign-in failed", `<p>No authorization code was received.</p>${restart}`, clear);
 
-    const base = publicBaseUrl();
     if (!base) return sendPage(res, 500, "Not configured", "<p>Set <code>PUBLIC_BASE_URL</code>.</p>", clear);
     const { scopes } = await completeSignIn(code, saved.verifier, `${base}/oauth2callback`);
     client.resetAuth();
@@ -139,9 +109,11 @@ export function createMcpHttpHandler(rawToken = process.env.MCP_HTTP_TOKEN ?? ""
   }
 
   async function handleMcp(req: IncomingMessage, res: ServerResponse, url: URL): Promise<void> {
-    const headerToken = req.headers.authorization?.replace(/^Bearer\s+/i, "");
-    if (!matches(headerToken) && !matches(url.searchParams.get("key"))) {
-      return void res.writeHead(401, { "content-type": "text/plain" }).end("Invalid or missing MCP access token.");
+    const headerToken = req.headers.authorization?.replace(/^Bearer\s+/i, "").trim();
+    const authorized = matches(headerToken) || matches(url.searchParams.get("key")) || Boolean(oauth?.isAccessToken(headerToken));
+    if (!authorized) {
+      const challenge = oauth ? { "www-authenticate": oauth.unauthorizedHeader } : {};
+      return void res.writeHead(401, { "content-type": "text/plain", ...challenge }).end("Invalid or missing MCP access token.");
     }
     if (req.method !== "POST") return void res.writeHead(405, { allow: "POST" }).end();
 
@@ -159,7 +131,13 @@ export function createMcpHttpHandler(rawToken = process.env.MCP_HTTP_TOKEN ?? ""
     const url = new URL(req.url ?? "/", "http://localhost");
     if (url.pathname === "/healthz") return void res.writeHead(200, { "content-type": "text/plain" }).end("ok");
     const route =
-      url.pathname === "/auth" ? handleSignInStart : url.pathname === "/oauth2callback" ? handleSignInCallback : MCP_PATHS.has(url.pathname) ? handleMcp : undefined;
+      url.pathname === "/auth"
+        ? handleSignInStart
+        : url.pathname === "/oauth2callback"
+          ? handleSignInCallback
+          : MCP_PATHS.has(url.pathname)
+            ? handleMcp
+            : oauth?.routes[url.pathname];
     if (!route) return void res.writeHead(404).end();
     if (token.length < MIN_TOKEN_LENGTH) {
       if (route === handleSignInStart) {
