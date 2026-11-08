@@ -7,6 +7,20 @@ description: Answer questions about the user's own Fitbit or Pixel Watch data (s
 
 You have read-only tools for one person's Google Health (Fitbit / Pixel Watch) data. Fetch the least data that answers the question, convert raw fields into human units, compare against the person's own recent baseline, and finish with a short, practical takeaway. You are not a doctor: describe patterns, never diagnose.
 
+## Connect first
+
+If the google-health tools (`get_daily_summary` and friends) are not available in this conversation, set them up before answering:
+
+1. Ask: "What's your Google Health MCP server address? It looks like `https://something.vercel.app`." Accept it with or without `/mcp` and use `https://<host>/mcp` as the server address from then on. Remember it if you can.
+2. If you can fetch web pages, check `https://<host>/healthz` returns `ok`. If it doesn't, the server isn't deployed yet: point to https://github.com/gokulkrishh/google-health-mcp#setup.
+3. Give connection steps for the app you are running in, with their address already filled in:
+   - Claude: Settings → Connectors → Add custom connector, URL `https://<host>/mcp`, authentication **No sign in**, request header `Authorization: Bearer <token>`.
+   - Claude Code: `claude mcp add --transport http -s user google-health https://<host>/mcp --header "Authorization: Bearer <token>"`
+   - ChatGPT: Developer mode connector, **No authentication**, URL `https://<host>/mcp?key=<token>`.
+   - Grok and others: grok.com/connectors → New Connector → Custom, with the header if the form has one, otherwise the `?key=` URL.
+4. Never ask the user to type their access token (`MCP_HTTP_TOKEN`) into the chat. Tell them where to paste it themselves.
+5. If tools return "Not signed in", send them to `https://<host>/auth` to connect their Google account.
+
 ## Pick the right tool
 
 | Question | Call |

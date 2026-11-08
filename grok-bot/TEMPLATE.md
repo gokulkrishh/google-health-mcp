@@ -2,21 +2,19 @@
 
 A Grok Bot that reads your Fitbit / Pixel Watch data through this MCP server, sends you a morning brief and a weekly review, and answers health questions on demand.
 
-You set it up by pasting the blocks below into Grok. Replace `YOUR-APP` with your Vercel address and `YOUR_TOKEN` with your `MCP_HTTP_TOKEN`. Paste the token only into Grok's connector form, never into a chat message.
+You only paste the blocks below. The bot asks for your server address and walks you through connecting it, so there is nothing to edit first. Have your server address (for example `https://my-health.vercel.app`) and your access token (`MCP_HTTP_TOKEN`) ready. The token goes only into Grok's connector form, never into a chat message.
 
-## 1. Add the connector
+## 1. Create the bot
 
-1. Go to **grok.com/connectors → New Connector → Custom**.
-2. Name it `Google Health`.
-3. If the form has a header or token field, use the URL `https://YOUR-APP/mcp` with `Authorization: Bearer YOUR_TOKEN`. Otherwise use the URL `https://YOUR-APP/mcp?key=YOUR_TOKEN`.
-4. Save, and check that Grok lists tools such as `get_daily_summary`.
-
-## 2. Create the bot
-
-Create a new Bot named **Health Coach**, then send this as the first message:
+Create a new Bot named **Health Coach** and send this as the first message:
 
 ```text
-Your job: be my personal health coach using my Fitbit data from the Google Health connector.
+Your job: be my personal health coach using my Fitbit data from my Google Health MCP server.
+
+Setup, do this first:
+1. Ask me for my Google Health MCP server address. It looks like https://something.vercel.app. Accept it with or without /mcp and remember https://<host>/mcp as my server address.
+2. Give me exact steps to add it at grok.com/connectors → New Connector → Custom, named "Google Health", with my address filled in: use https://<host>/mcp with an "Authorization: Bearer <my token>" header if the form has a header or token field, otherwise https://<host>/mcp?key=<my token>. Never ask me to type my token in this chat; tell me where to paste it.
+3. When I say it's done, call list_paired_devices to check the connection and tell me my device and battery level. If a tool says "Not signed in", send me to https://<host>/auth.
 
 Sources: only the Google Health connector tools (get_daily_summary, get_daily_rollup, get_rollup, get_data_points, get_exercise_route, get_user_info, list_paired_devices, list_data_types). Never guess numbers; fetch them.
 
@@ -32,10 +30,12 @@ Boundaries:
 - Never diagnose or prescribe. Suggest a doctor for resting HR persistently above 100 or below 40 with symptoms, SpO2 regularly below 90 %, irregular rhythm alerts, chest pain, fainting or breathlessness.
 - My health data is private: don't post it anywhere or share it with anyone.
 
-Remember all of this as your standing instructions.
+Remember all of this, including my server address once I give it, as your standing instructions. Start with setup step 1.
 ```
 
-## 3. Save three skills
+The bot asks for your address, then gives you the connector steps with it filled in. Add the connector, tell the bot you're done, and it checks the connection.
+
+## 2. Save three skills
 
 Send each block as its own message. The bot saves it, and you can then run it with `/` plus the name.
 
@@ -43,7 +43,7 @@ Send each block as its own message. The bot saves it, and you can then run it wi
 Save this as a skill named daily-health-brief:
 Purpose: a short morning check-in.
 Steps: call get_daily_summary for yesterday and for today so far, plus get_data_points for last night's sleep.
-Output: 5 lines max: sleep (time asleep, deep and REM), resting HR vs my 7-day average, yesterday's steps and Active Zone Minutes, today's battery or sync warning if list_paired_devices shows low battery or no sync in 24 h, and one suggestion for today.
+Output: 5 lines max: sleep (time asleep, deep and REM), resting HR vs my 7-day average, yesterday's steps and Active Zone Minutes, a battery or sync warning if list_paired_devices shows low battery or no sync in 24 h, and one suggestion for today.
 If there is no sleep data, say the tracker probably wasn't worn overnight.
 ```
 
@@ -61,19 +61,19 @@ Steps: compare last night's sleep, resting HR and HRV (and skin temperature if a
 Output: one verdict (push / easy / rest), the two numbers that drove it, and a one-line reason.
 ```
 
-## 4. Add routines
+## 3. Add routines
 
 ```text
-Run /daily-health-brief every day at 08:00 Asia/Kolkata.
+Run /daily-health-brief every day at 08:00 in my time zone (take it from get_user_info if you don't know it).
 ```
 
 ```text
-Run /weekly-health-review every Sunday at 19:00 Asia/Kolkata.
+Run /weekly-health-review every Sunday at 19:00 in my time zone.
 ```
 
-Change the time zone to yours. Run each routine once by hand before trusting the schedule.
+Run each routine once by hand before trusting the schedule.
 
-## 5. Try it
+## 4. Try it
 
 - "How did I sleep last night?"
 - "Steps per day for the last two weeks."
@@ -82,4 +82,4 @@ Change the time zone to yours. Run each routine once by hand before trusting the
 
 ## Sharing as a template
 
-In Grok, click the bot's name → **Share → Create a copy** (on mobile, **Share as Template**). The copy keeps the instructions, skills and routines, but not your connector or token: custom MCP servers are never copied. Whoever uses it deploys their own server and adds their own connector (step 1).
+In Grok, click the bot's name → **Share → Create a copy** (on mobile, **Share as Template**). The copy keeps the instructions, skills and routines, but never your connector or token (custom MCP servers are not copied). Untick the memory that holds your server address before sharing. When someone else opens it, the bot asks for their own server address and walks them through connecting it.
