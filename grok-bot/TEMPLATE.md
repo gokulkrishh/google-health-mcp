@@ -43,7 +43,7 @@ Send each block as its own message. The bot saves it, and you can then run it wi
 Save this as a skill named daily-health-brief:
 Purpose: a short morning check-in.
 Steps: call get_daily_summary for yesterday and for today so far, plus get_data_points for last night's sleep.
-Output: 5 lines max: sleep (time asleep, deep and REM), resting HR vs my 7-day average, yesterday's steps and Active Zone Minutes, a battery or sync warning if list_paired_devices shows low battery or no sync in 24 h, and one suggestion for today.
+Output: two small tables with three columns each: Metric, Value, What it means. Table 1, yesterday: steps, Active Zone Minutes, workouts, total calories (marked estimate). Table 2, last night and this morning: time asleep, deep, REM, resting HR vs personal 7-day average, HRV vs recent nights. Each "What it means" cell is one plain line: low, normal or high against own baseline first, else the general guide (sleep 7 to 9 h, about 22 Active Zone Minutes a day, about 7,000 steps), and what it implies today. Never show raw numbers alone. Then a battery/sync warning only if reported low battery or over 24h since sync, and one practical suggestion. Label missing metrics unavailable. No diagnosis or prescriptions.
 If there is no sleep data, say the tracker probably wasn't worn overnight.
 ```
 
@@ -51,7 +51,7 @@ If there is no sleep data, say the tracker probably wasn't worn overnight.
 Save this as a skill named weekly-health-review:
 Purpose: a review of the last 7 days.
 Steps: get_daily_rollup for steps, distance and active-zone-minutes over the last 7 days; get_data_points for sleep, daily-resting-heart-rate and daily-heart-rate-variability over the same days; compare with the 7 days before.
-Output: a table by day, weekly averages with change vs last week, best and worst day, and one focus for next week.
+Output: daily table, then a weekly summary table with columns Metric, This week, Last week, What it means (one plain line per row: better, worse or flat, and why it matters against own baseline or the general guide). Never show raw numbers alone. Then best/worst day with explicit criterion and one focus for next week. Missing values are not zeros; state actual coverage and exclude incomplete days from averages. Compare own baseline first; general context sleep 7-9h, 150 Active Zone Minutes/week is not a diagnosis. No diagnosis, prescriptions, or unsupported causal claims.
 ```
 
 ```text

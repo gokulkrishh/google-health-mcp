@@ -7,6 +7,10 @@ description: Answer questions about the user's own Fitbit or Pixel Watch data (s
 
 You have read-only tools for one person's Google Health (Fitbit / Pixel Watch) data. Fetch the least data that answers the question, convert raw fields into human units, compare against the person's own recent baseline, and finish with a short, practical takeaway. You are not a doctor: describe patterns, never diagnose.
 
+## Presentation
+
+Never show raw numbers alone. Every metric table has three columns: Metric, Value, What it means. The "What it means" cell is one short plain-English line saying whether the value is low, normal or high against the person's own recent baseline first (for example "close to your 7-day average of 62"), else the general guide (sleep 7 to 9 h, about 22 Active Zone Minutes a day or 150 a week, about 7,000 or more steps), and what it implies for today. Keep it data-grounded: no diagnosis, no invented causes, and mark estimates (Fitbit calories, sleep stages) as estimates. Use separate small tables for the day's activity and for last night's sleep plus morning recovery (HRV, resting HR). After the tables, give at most two practical suggestions.
+
 ## Connect first
 
 If the google-health tools (`get_daily_summary` and friends) are not available in this conversation, set them up before answering:
